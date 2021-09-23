@@ -20,7 +20,9 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import routers
 from django.urls import path
 from data.views.views import HardwareViewSet, AccessoryViewSet, CalibrationViewSet, ChannelViewSet, HubViewSet, \
-    IOViewSet
+    IOViewSet, signup,listHubAccessories,listHubHardware,listHubChannels
+from django.contrib.auth.views import LoginView
+
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
@@ -28,7 +30,7 @@ router.register(r'accessories', AccessoryViewSet)
 router.register(r'hardwares', HardwareViewSet)
 router.register(r'channel', ChannelViewSet)
 router.register(r'calibration', CalibrationViewSet)
-router.register(r'hubs', HubViewSet)
+router.register(r'hubs', HubViewSet, basename='hubs')
 router.register(r'io', IOViewSet)
 
 from data.views.views import index
@@ -38,6 +40,7 @@ from data.views.views import video_streams
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
+    url(r'^login/$', LoginView.as_view(template_name="registration/login.html"), name="login"),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     # path('start', views.start, name='start'),
     # path('calibrate', views.start, name='calibrate'),
@@ -57,7 +60,6 @@ urlpatterns = [
     path('delete/ajax/hardware', HardwareViewSet.deleteHardware, name="delete_hardware"),
     path('delete/ajax/io', IOViewSet.deleteIO, name="delete_io"),
 
-
     path('post/ajax/hardware/io/', HardwareViewSet.postHardwareIO,
          name="post_hardware_io"),
     path('post/ajax/calibrationconstant', CalibrationViewSet.postCalibrationConstant, name="post_calibration_constant"),
@@ -69,16 +71,16 @@ urlpatterns = [
     path('hardwares/<uuid:hardware_id>/channels', HardwareViewSet.getChannels),
     path('channels/<uuid:channel_id>/io', ChannelViewSet.listIO),
 
-
     # path('<str:room_name>/', views.room, name='room'),
     path('post/ajax/hub', HubViewSet.postHub, name="post_hub"),
     path('hub/', csrf_exempt(HubViewSet.postHub)),
     path('pipico/', csrf_exempt(HardwareViewSet.postHardware)),
 
-    path('hub/<uuid:hub_id>/hardwares', HubViewSet.listHubHardware),
-    path('hub/<uuid:hub_id>/channels', HubViewSet.listHubChannels),
-    path('hub/<uuid:hub_id>/accessories', HubViewSet.listHubAccessories),
+    path('hubs/<uuid:hub_id>/hardwares', view=listHubHardware),
+    path('hubs/<uuid:hub_id>/channels', view=listHubChannels),
+    path('hubs/<uuid:hub_id>/accessories', view=listHubAccessories),
     path('openhubapi/about', HubViewSet.about),
-    path('streams/',video_streams, name="video_streams"),
+    path('streams/', video_streams, name="video_streams"),
+    url(r'^signup/$', signup, name='signup'),
 
 ]

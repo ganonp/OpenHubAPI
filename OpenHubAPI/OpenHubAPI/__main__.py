@@ -19,4 +19,6 @@ ip = str(get_my_ip())
 
 main('__main__.py','makemigrations', 'data')
 main('__main__.py','migrate', 'data')
+main('__main__.py','makemigrations')
+main('__main__.py','migrate')
 main('__main__.py','runserver',ip + ':8000')
