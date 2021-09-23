@@ -7,6 +7,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from polymorphic.models import PolymorphicTypeInvalid
 from rest_framework import viewsets, renderers
+from rest_framework.decorators import renderer_classes, api_view
+from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.response import Response
 
 from data.forms.forms import HardwareForm, HardwareDHT22Form, HardwareMCP3008Form, HardwareModProbeForm, \
@@ -17,7 +19,6 @@ from data.models.models import Hardware, DHT22, MCP3008, ModProbe, PiPico, VEML7
     CalibrationConstants, Channel, Hub, HardwareIO
 from data.serializers.serializers import HardwareSerializer, ChannelSerializer, AccessorySerializer, \
     CalibrationSerializer, HubSerializer, HardwareIOSerializer
-
 
 SPI = 'SPI'
 Serial = 'Serial'
@@ -606,21 +607,10 @@ class HubViewSet(viewsets.ModelViewSet):
     queryset = Hub.objects.all()
     serializer_class = HubSerializer
     renderer_classes = (renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
+    context_object_name = 'all_hubs'
 
-    def listHubHardware(self, hub_id):
-        hardware = Hub.objects.get(pk=hub_id).hardware_set.all()
-        serialized_hardware = HardwareSerializer().to_json_array(hardware)
-        return JsonResponse(serialized_hardware, status=200, safe=False)
-
-    def listHubChannels(self, hub_id):
-        channels = Hub.objects.get(pk=hub_id).channel_set.all()
-        serialized_channels = ChannelSerializer(many=True).to_representation(channels)
-        return JsonResponse(serialized_channels, status=200, safe=False)
-
-    def listHubAccessories(self, hub_id):
-        accessories = Hub.objects.get(pk=hub_id).accessory_set.all()
-        serialized_accessories = AccessorySerializer(many=True).to_representation(accessories)
-        return JsonResponse(serialized_accessories, status=200, safe=False)
+    def get_queryset(self):
+        return Hub.objects.all()
 
     def about(self, *args, **kwargs):
         api_about = {}
@@ -655,8 +645,7 @@ class HubViewSet(viewsets.ModelViewSet):
             hub_data = HubSerializer(instance=hub).to_representation(hub)
             return JsonResponse(hub_data, status=200)
 
-
-    def postHub( request):
+    def postHub(request):
         # request should be ajax and method should be POST.
         if request.is_ajax() and request.method == "POST":
             # get the form data
@@ -770,3 +759,58 @@ class IOViewSet(viewsets.ModelViewSet):
 
 def video_streams(request):
     return render(request, "streams.html", None)
+
+
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import render, redirect
+
+
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('hubs')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+@api_view(('GET',))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def listHubHardware(request, hub_id):
+    form_type = HardwareTypeForm(initial={'type': 'PiPico'})
+    hardware_form = HardwarePiPicoForm(initial={'type': 'PiPico'})
+    hardware = Hub.objects.get(pk=hub_id).hardware_set.all()
+    if request.accepts("text/html"):
+        return Response({"form": hardware_form, "type_form": form_type, "hardwares": hardware},
+                        template_name='hardwares.html')
+
+    serialized_hardware = HardwareSerializer().to_json_array(hardware)
+    return JsonResponse(serialized_hardware, status=200, safe=False)
+
+
+@api_view(('GET',))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def listHubChannels(request, hub_id):
+    channels = Hub.objects.get(pk=hub_id).channel_set.all()
+    serialized_channels = ChannelSerializer(many=True).to_representation(channels)
+    return JsonResponse(serialized_channels, status=200, safe=False)
+
+
+@api_view(('GET',))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def listHubAccessories(request, hub_id):
+    accessories = Hub.objects.get(pk=hub_id).accessory_set.all()
+
+    if request.accepts("text/html"):
+        form = AccessoryForm()
+        return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
+    serialized_accessories = AccessorySerializer(many=True).to_representation(accessories)
+
+    return JsonResponse(serialized_accessories, status=200, safe=False)

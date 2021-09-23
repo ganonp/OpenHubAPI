@@ -1,4 +1,4 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/base.html" %}
 
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} |
     {{ site_title|default:_('Django site admin') }}{% endblock %}
@@ -10,6 +10,24 @@
 {% block nav-global %}
 
     <div id="top_menu"><a
-            href="/hubs/">Hubs</a> | <a href="/hardwares/">Hardware</a> | <a
-            href="/accessories/">Accessories</a></div>
+            href="/hubs/">Hubs</a> |
+        <div class="dropdown">
+            <button class="dropbtn">Dropdown
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <li class="hub">
+
+                    {% for hub in all_hubs %}
+                        <h1>
+                            <a href='/hub/{{ hub.id }}'>{{ hub.display_name }}</a>
+                        </h1>
+                    {% endfor %}
+                </li>
+
+            </div>
+        </div>
+        |
+        <a href="/hardwares/">Hardware</a> | <a
+                href="/accessories/">Accessories</a></div>
 {% endblock %}
