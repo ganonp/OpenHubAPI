@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from data.forms.forms import HardwareForm, HardwareDHT22Form, HardwareMCP3008Form, HardwareModProbeForm, \
     HardwarePiPicoForm, HardwareVEML7700Form, HardwareTypeForm, ChannelForm, HardwareConfigForm, AccessoryForm, \
     CalibrationForm, CalibrationConstantForm, HubForm, HardwareIOTypeForm, SPIIoForm, PwmIoForm, SerialIoForm, \
-    I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoAnalogIoForm, PiGpioForm, HardwareIoForm, HardwarePMSA0031Form
+    I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoACAnalogIoForm,PiPicoAnalogIoForm, PiGpioForm, HardwareIoForm, HardwarePMSA0031Form
 from data.models.models import Hardware, DHT22, MCP3008, ModProbe, PiPico, VEML7700, Accessory, Calibration, \
     CalibrationConstants, Channel, Hub, HardwareIO
 from data.serializers.serializers import HardwareSerializer, ChannelSerializer, AccessorySerializer, \
@@ -27,6 +27,7 @@ I2C = 'I2C'
 DeviceFile = 'Device File'
 MCPChannel = 'MCP Channel'
 PiPicoAnalog = 'Pi Pico Analog'
+PiPicoACAnalog = 'Pi Pico AC Analog'
 PiGPIO = 'Pi GPIO'
 
 
@@ -124,6 +125,10 @@ class HardwareViewSet(viewsets.ModelViewSet):
             form = PiPicoAnalogIoForm(initial=initial)
             form.type = PiPicoAnalog
 
+        if hardware_io_type == PiPicoACAnalog:
+            form = PiPicoACAnalogIoForm(initial=initial)
+            form.type = PiPicoACAnalog
+
         if hardware_io_type == PiGPIO:
             form = PiGpioForm(initial=initial)
             form.type = PiGPIO
@@ -173,6 +178,7 @@ class HardwareViewSet(viewsets.ModelViewSet):
     DeviceFile = 'Device File'
     MCPChannel = 'MCP Channel'
     PiPicoAnalog = 'Pi Pico Analog'
+    PiPicoACAnalog = 'Pi Pico AC Analog'
     PiGPIO = 'Pi GPIO'
 
     def postHardwareIO(request):
@@ -195,6 +201,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 hardware_form = MCPAnalogIoForm(request.POST)
             if hardware_io_type == PiPicoAnalog:
                 hardware_form = PiPicoAnalogIoForm(request.POST)
+            if hardware_io_type == PiPicoACAnalog:
+                hardware_form = PiPicoACAnalogIoForm(request.POST)
             if hardware_io_type == PiGPIO:
                 hardware_form = PiGpioForm(request.POST)
             # save the data and after fetch the object in instance
@@ -711,6 +719,8 @@ class IOViewSet(viewsets.ModelViewSet):
             hardware_form = MCPAnalogIoForm(instance=instance)
         if hardware_io_type == PiPicoAnalog:
             hardware_form = PiPicoAnalogIoForm(instance=instance)
+        if hardware_io_type == PiPicoACAnalog:
+            hardware_form = PiPicoACAnalogIoForm(instance=instance)
         if hardware_io_type == PiGPIO:
             hardware_form = PiGpioForm(instance=instance)
 

@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from data.models.models import CalibrationConstants, Calibration, Channel, Accessory, HardwareConfig, PiPico, \
     DHT22, MCP3008, ModProbe, VEML7700, Hardware, Hub, SPIIo, SerialIo, PwmIo, I2cIo, DeviceFileIo, MCPAnalogIo, \
-    PiPicoAnalogIo, PiGpio
+    PiPicoAnalogIo,PiPicoACAnalogIo, PiGpio
 
 
 class CalibrationConstantsSerializer(serializers.ModelSerializer):
@@ -145,6 +145,11 @@ class PiPicoAnalogIoSerializer(serializers.ModelSerializer):
         model = PiPicoAnalogIo
         fields = '__all__'
 
+class PiPicoACAnalogIoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PiPicoACAnalogIo
+        fields = '__all__'
+
 class PiGpioSerializer(serializers.ModelSerializer):
     class Meta:
         model = PiGpio
@@ -177,7 +182,8 @@ class HardwareIOSerializer(serializers.ModelSerializer):
 
         elif isinstance(obj, PiPicoAnalogIo):
             return PiPicoAnalogIoSerializer(obj, context=self.context).to_representation(obj)
-
+        elif isinstance(obj, PiPicoACAnalogIo):
+            return PiPicoACAnalogIoSerializer(obj, context=self.context).to_representation(obj)
         elif isinstance(obj, PiGpio):
             return PiGpioSerializer(obj, context=self.context).to_representation(obj)
 

@@ -5,7 +5,7 @@ from django.forms import ChoiceField
 from data.models.models import Calibration, Hardware, Accessory, Channel, HardwareConfig, \
     CalibrationConstants, DHT22, MCP3008, \
     ModProbe, PiPico, VEML7700, HardwareChannelTypes, Hub, Category, AccessoryType, SPIIo, SerialIo, PwmIo, I2cIo, \
-    DeviceFileIo, MCPAnalogIo, PiGpio, PiPicoAnalogIo, HardwareIO, PMSA0031
+    DeviceFileIo, MCPAnalogIo, PiGpio, PiPicoAnalogIo,PiPicoACAnalogIo, HardwareIO, PMSA0031
 
 
 
@@ -373,6 +373,24 @@ class PiPicoAnalogIoForm(HardwareIoForm):
         model = PiPicoAnalogIo
         fields = ("__all__")
 
+class PiPicoACAnalogIoForm(HardwareIoForm):
+
+    def __init__(self, *args, **kwargs):
+        super(PiPicoACAnalogIoForm, self).__init__(*args, **kwargs)
+        ## add a "form-control" class to each form input
+        ## for enabling bootstrap
+        print('asdf')
+        for name in self.fields.keys():
+            if name in ('parent_hardware', 'child_hardware', 'id', 'child_channel', 'hub'):
+                self.fields[name].widget = forms.HiddenInput()
+            print(name)
+            self.fields[name].widget.attrs.update({
+                'class': 'form-control',
+            })
+
+    class Meta:
+        model = PiPicoACAnalogIo
+        fields = ("__all__")
 
 class PiGpioForm(HardwareIoForm):
 
@@ -418,11 +436,12 @@ I2C = 'I2C'
 DeviceFile = 'Device File'
 MCPChannel = 'MCP Channel'
 PiPicoAnalog = 'Pi Pico Analog'
+PiPicoACAnalog = 'Pi Pico AC Analog'
 PiGPIO = 'Pi GPIO'
 
 hardware_io_choices = (
     (SPI, SPI), (Serial, Serial), (PWM, PWM), (I2C, I2C), (DeviceFile, DeviceFile), (MCPChannel, MCPChannel),
-    (PiPicoAnalog, PiPicoAnalog), (PiGPIO, PiGPIO))
+    (PiPicoAnalog, PiPicoAnalog),(PiPicoACAnalog, PiPicoACAnalog), (PiGPIO, PiGPIO))
 
 
 class HardwareIOTypeForm(forms.Form):

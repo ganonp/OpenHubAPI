@@ -115,6 +115,7 @@ class Channel(models.Model):
         DHT22Temp = 'DHT22Temp'
         MCP3008Analog = 'MCP3008Analog'
         ModProbeTemp = 'ModProbeTemp'
+        PiPicoACAnalog = 'PiPicoACAnalog'
         PiPicoAnalog = 'PiPicoAnalog'
         PiPicoPump = 'PiPicoPump'
         PiPicoRelay = 'PiPicoRelay'
@@ -153,9 +154,10 @@ class HardwareIO(PolymorphicModel):
     I2C = 'I2C'
     DeviceFile = 'Device File'
     MCPChannel = 'MCP Channel'
+    PiPicoACAnalog = 'Pi Pico AC Analog'
     PiPicoAnalog = 'Pi Pico Analog'
     PiGPIO = 'Pi GPIO'
-    hardware_io_types_choices = [(SPI,SPI),(Serial,Serial),(PWM,PWM),(I2C,I2C),(DeviceFile,DeviceFile),(MCPChannel,MCPChannel),(PiPicoAnalog,PiPicoAnalog),(PiGPIO,PiGPIO)]
+    hardware_io_types_choices = [(SPI,SPI),(Serial,Serial),(PWM,PWM),(I2C,I2C),(DeviceFile,DeviceFile),(MCPChannel,MCPChannel),(PiPicoAnalog,PiPicoAnalog),(PiPicoACAnalog,PiPicoACAnalog),(PiGPIO,PiGPIO)]
 
     label = models.CharField(max_length=255, null=True)
 
@@ -218,6 +220,9 @@ class MCPAnalogIo(HardwareIO):
     channel_index = models.IntegerField()
 
 class PiPicoAnalogIo(HardwareIO):
+    pin = models.IntegerField()
+
+class PiPicoACAnalogIo(HardwareIO):
     pin = models.IntegerField()
 
 class PiGpio(HardwareIO):
