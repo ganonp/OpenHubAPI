@@ -1,8 +1,10 @@
+import mptt
 from django.db import models
 import uuid
 from django.utils import timezone
 import time
 from polymorphic.models import PolymorphicModel
+from mptt.models import MPTTModel, TreeForeignKey
 
 
 class Hub(models.Model):
@@ -85,10 +87,12 @@ class VEML7700(Hardware):
     scl = models.IntegerField()
     sda = models.IntegerField()
 
+
 class PMSA0031(Hardware):
     scl = models.IntegerField()
     sda = models.IntegerField()
     reset = models.IntegerField()
+
 
 class HardwareChannelTypes(models.Model):
     hardware_type = models.CharField(
@@ -115,6 +119,7 @@ class Channel(models.Model):
         DHT22Temp = 'DHT22Temp'
         MCP3008Analog = 'MCP3008Analog'
         ModProbeTemp = 'ModProbeTemp'
+        PiPicoACAnalog = 'PiPicoACAnalog'
         PiPicoAnalog = 'PiPicoAnalog'
         PiPicoPump = 'PiPicoPump'
         PiPicoRelay = 'PiPicoRelay'
@@ -130,6 +135,7 @@ class Channel(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE, null=False)
+    keep_statistics = models.BooleanField(null=True, blank=True, default=False)
 
     def save(self, *args, **kwargs):
         if not self.created_at:
@@ -144,24 +150,26 @@ class Channel(models.Model):
         ]
 
 
-
 class HardwareIO(PolymorphicModel):
-
     SPI = 'SPI'
     Serial = 'Serial'
     PWM = 'PWM'
     I2C = 'I2C'
     DeviceFile = 'Device File'
     MCPChannel = 'MCP Channel'
+    PiPicoACAnalog = 'Pi Pico AC Analog'
     PiPicoAnalog = 'Pi Pico Analog'
     PiGPIO = 'Pi GPIO'
-    hardware_io_types_choices = [(SPI,SPI),(Serial,Serial),(PWM,PWM),(I2C,I2C),(DeviceFile,DeviceFile),(MCPChannel,MCPChannel),(PiPicoAnalog,PiPicoAnalog),(PiGPIO,PiGPIO)]
+    hardware_io_types_choices = [(SPI, SPI), (Serial, Serial), (PWM, PWM), (I2C, I2C), (DeviceFile, DeviceFile),
+                                 (MCPChannel, MCPChannel), (PiPicoAnalog, PiPicoAnalog),
+                                 (PiPicoACAnalog, PiPicoACAnalog), (PiGPIO, PiGPIO)]
 
     label = models.CharField(max_length=255, null=True)
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    parent_hardware = models.ForeignKey(Hardware, on_delete=models.CASCADE, blank=True, null=True,related_name="%(app_label)s_%(class)s_related",
-        related_query_name="%(app_label)s_%(class)ss")
+    parent_hardware = models.ForeignKey(Hardware, on_delete=models.CASCADE, blank=True, null=True,
+                                        related_name="%(app_label)s_%(class)s_related",
+                                        related_query_name="%(app_label)s_%(class)ss")
     child_hardware = models.ForeignKey(Hardware, on_delete=models.CASCADE, blank=True, null=True)
     child_channel = models.ForeignKey(Channel, on_delete=models.CASCADE, blank=True, null=True)
     type = models.CharField(max_length=25, choices=hardware_io_types_choices, default=PiPicoAnalog)
@@ -182,6 +190,7 @@ class HardwareIO(PolymorphicModel):
             models.Index(fields=['id', 'parent_hardware', 'child_channel']),
         ]
 
+
 class PiPins(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     hardware_io = models.ForeignKey(HardwareIO, on_delete=models.CASCADE, blank=True, null=True)
@@ -192,13 +201,16 @@ class PiPins(models.Model):
             models.Index(fields=['hardware_io']),
         ]
 
+
 class SPIIo(HardwareIO):
     sck = models.IntegerField()
     miso = models.IntegerField()
     mosi = models.IntegerField()
 
+
 class SerialIo(HardwareIO):
     port = models.CharField(max_length=100)
+
 
 class PwmIo(HardwareIO):
     en = models.IntegerField()
@@ -206,22 +218,31 @@ class PwmIo(HardwareIO):
     duty_min = models.IntegerField()
     freq = models.IntegerField()
 
+
 class I2cIo(HardwareIO):
     scl = models.IntegerField()
     sda = models.IntegerField()
+
 
 class DeviceFileIo(HardwareIO):
     base_dir = models.CharField(max_length=100, null=True)
     device_file = models.CharField(max_length=100, null=True)
 
+
 class MCPAnalogIo(HardwareIO):
     channel_index = models.IntegerField()
+
 
 class PiPicoAnalogIo(HardwareIO):
     pin = models.IntegerField()
 
+
+class PiPicoACAnalogIo(HardwareIO):
+    pin = models.IntegerField()
+
+
 class PiGpio(HardwareIO):
-    pin =  models.IntegerField()
+    pin = models.IntegerField()
 
 
 class Accessory(models.Model):
@@ -242,6 +263,14 @@ class Accessory(models.Model):
             self.created_at = timezone.now()
         self.updated_at = timezone.now()
         return super().save(*args, **kwargs)
+
+    @property
+    def has_data_transformer(self):
+        return self.datatransformer_set.count() > 0
+
+    @property
+    def datatransformer(self):
+        return self.datatransformer_set.first().get_root()
 
     class Meta:
         indexes = [
@@ -267,6 +296,129 @@ class HardwareConfig(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=['id', 'hardware']),
+        ]
+
+
+class HardwareStats(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    hardware = models.ManyToManyField(Channel)
+
+    type = models.CharField(max_length=255, null=True)
+    value = models.FloatField(null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.created_at:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id']),
+        ]
+
+
+class DataTransformerTypes(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    type = models.CharField(
+        max_length=15, blank=True, null=True, default=None
+    )
+
+class DataTransformer(MPTTModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    accessory = models.ForeignKey(
+        Accessory,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+
+
+    type = models.ForeignKey(DataTransformerTypes, on_delete=models.DO_NOTHING, blank=True, null=True, default=None)
+
+    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    updated_at = models.DateTimeField(blank=True,auto_now=True)
+    created_at = models.DateTimeField(blank=True,auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.created_at:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id', 'accessory']),
+        ]
+
+    class MPTTMeta:
+        order_insertion_by = ['id']
+
+
+class DataTransformerConstants(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,blank=True,null=False)
+    data_transformer = models.ForeignKey(DataTransformer, on_delete=models.CASCADE, blank=True, null=True)
+    index = models.IntegerField(blank=True, null=True, default=None)
+    value = models.FloatField(blank=True,null=False)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.created_at:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id', 'data_transformer']),
+        ]
+
+
+class HardwareDataTransformer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    hardware = models.ManyToManyField(Channel,blank=True)
+    data_transformer = models.ForeignKey(DataTransformer, on_delete=models.CASCADE, blank=True, null=True)
+    index = models.IntegerField(blank=True, null=True, default=None)
+    updated_at = models.DateTimeField(blank=True,auto_now=True)
+    created_at = models.DateTimeField(blank=True,auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.created_at:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id', 'data_transformer']),
+        ]
+
+
+class HardwareStatsDataTransformer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,blank=True,null=False)
+    hardware_stat = models.ForeignKey(HardwareStats, on_delete=models.CASCADE, blank=True, null=True, default=None)
+    data_transformer = models.ForeignKey(DataTransformer, on_delete=models.CASCADE, blank=True, null=True)
+    index = models.IntegerField(blank=True, null=True, default=None)
+    updated_at = models.DateTimeField(blank=True,auto_now=True)
+    created_at = models.DateTimeField(blank=True,auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.created_at:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id', 'data_transformer']),
         ]
 
 

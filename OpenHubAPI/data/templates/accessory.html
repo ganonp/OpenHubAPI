@@ -77,7 +77,15 @@
             </div>
         </div>
     </div>
+    <form action="data_transformer" method="POST">
+        {% csrf_token %}
+        {{ data_transformer_form.as_p }}
+        <input type="submit" value=Submit">
+
+    </form>
+
 {% endblock content %}
+<br>
 
 {% block javascript %}
     <script>

@@ -2,8 +2,12 @@ from rest_framework import serializers
 
 from data.models.models import CalibrationConstants, Calibration, Channel, Accessory, HardwareConfig, PiPico, \
     DHT22, MCP3008, ModProbe, VEML7700, Hardware, Hub, SPIIo, SerialIo, PwmIo, I2cIo, DeviceFileIo, MCPAnalogIo, \
-    PiPicoAnalogIo, PiGpio
+    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer
 
+class RecursiveField(serializers.Serializer):
+    def to_representation(self, value):
+        serializer = self.parent.parent.__class__(value, context=self.context)
+        return serializer.data
 
 class CalibrationConstantsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,7 +33,7 @@ class CalibrationSerializer(serializers.ModelSerializer):
 class ChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Channel
-        fields = ['id', 'type', 'channel_index','hardware']
+        fields = ['id', 'type', 'channel_index', 'hardware']
 
 
 class AccessorySerializer(serializers.ModelSerializer):
@@ -39,7 +43,15 @@ class AccessorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Accessory
         fields = ['id', 'category', 'type', 'display_name', 'aid',
-                  'calibration','channels']
+                  'calibration', 'channels']
+
+
+class DataTransformerSerializer(serializers.ModelSerializer):
+    data_transformer_child = RecursiveField(many=True)
+
+    class Meta:
+        model = DataTransformer
+        fields = '__all__'
 
 
 class HardwareConfigSerializer(serializers.HyperlinkedModelSerializer):
@@ -80,7 +92,6 @@ class VEML7700Serializer(serializers.ModelSerializer):
 
 class HardwareSerializer(serializers.ModelSerializer):
 
-
     def to_json_array(self, obt_list):
         serialized_hardware = []
         for obj in obt_list:
@@ -108,7 +119,6 @@ class HardwareSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
 class SPIIoSerializer(serializers.ModelSerializer):
     class Meta:
         model = SPIIo
@@ -120,35 +130,48 @@ class SerialIoSerializer(serializers.ModelSerializer):
         model = SerialIo
         fields = '__all__'
 
+
 class PwmIoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PwmIo
         fields = '__all__'
+
 
 class I2cIoSerializer(serializers.ModelSerializer):
     class Meta:
         model = I2cIo
         fields = '__all__'
 
+
 class DeviceFileIoSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeviceFileIo
         fields = '__all__'
+
 
 class MCPAnalogIoSerializer(serializers.ModelSerializer):
     class Meta:
         model = MCPAnalogIo
         fields = '__all__'
 
+
 class PiPicoAnalogIoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PiPicoAnalogIo
         fields = '__all__'
 
+
+class PiPicoACAnalogIoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PiPicoACAnalogIo
+        fields = '__all__'
+
+
 class PiGpioSerializer(serializers.ModelSerializer):
     class Meta:
         model = PiGpio
         fields = '__all__'
+
 
 class HardwareIOSerializer(serializers.ModelSerializer):
 
@@ -177,13 +200,24 @@ class HardwareIOSerializer(serializers.ModelSerializer):
 
         elif isinstance(obj, PiPicoAnalogIo):
             return PiPicoAnalogIoSerializer(obj, context=self.context).to_representation(obj)
-
+        elif isinstance(obj, PiPicoACAnalogIo):
+            return PiPicoACAnalogIoSerializer(obj, context=self.context).to_representation(obj)
         elif isinstance(obj, PiGpio):
             return PiGpioSerializer(obj, context=self.context).to_representation(obj)
-
 
         return super(HardwareIOSerializer, self).to_representation(obj)
 
     class Meta:
         model = Hardware
         fields = '__all__'
+
+class DataTransformerTreeSerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField(source='get_children')
+    class Meta:
+        model=DataTransformer
+        fields = '__all__'  # add here rest of the fields from model
+
+    def get_children(self, obj):
+        children = self.context['children'].get(obj.id, [])
+        serializer = DataTransformerTreeSerializer(children, many=True, context=self.context)
+        return serializer.data

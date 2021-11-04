@@ -1,23 +1,27 @@
 import json
+from collections import defaultdict
 
 from django.core import serializers as django_serializers
+from django.forms import formset_factory, inlineformset_factory
 from django.http import JsonResponse, HttpResponse, QueryDict
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from polymorphic.models import PolymorphicTypeInvalid
 from rest_framework import viewsets, renderers
+from rest_framework.decorators import renderer_classes, api_view
+from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.response import Response
 
 from data.forms.forms import HardwareForm, HardwareDHT22Form, HardwareMCP3008Form, HardwareModProbeForm, \
     HardwarePiPicoForm, HardwareVEML7700Form, HardwareTypeForm, ChannelForm, HardwareConfigForm, AccessoryForm, \
     CalibrationForm, CalibrationConstantForm, HubForm, HardwareIOTypeForm, SPIIoForm, PwmIoForm, SerialIoForm, \
-    I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoAnalogIoForm, PiGpioForm, HardwareIoForm, HardwarePMSA0031Form
+    I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoACAnalogIoForm, PiPicoAnalogIoForm, PiGpioForm, HardwareIoForm, \
+    HardwarePMSA0031Form
 from data.models.models import Hardware, DHT22, MCP3008, ModProbe, PiPico, VEML7700, Accessory, Calibration, \
     CalibrationConstants, Channel, Hub, HardwareIO
 from data.serializers.serializers import HardwareSerializer, ChannelSerializer, AccessorySerializer, \
     CalibrationSerializer, HubSerializer, HardwareIOSerializer
-
 
 SPI = 'SPI'
 Serial = 'Serial'
@@ -26,6 +30,7 @@ I2C = 'I2C'
 DeviceFile = 'Device File'
 MCPChannel = 'MCP Channel'
 PiPicoAnalog = 'Pi Pico Analog'
+PiPicoACAnalog = 'Pi Pico AC Analog'
 PiGPIO = 'Pi GPIO'
 
 
@@ -123,6 +128,10 @@ class HardwareViewSet(viewsets.ModelViewSet):
             form = PiPicoAnalogIoForm(initial=initial)
             form.type = PiPicoAnalog
 
+        if hardware_io_type == PiPicoACAnalog:
+            form = PiPicoACAnalogIoForm(initial=initial)
+            form.type = PiPicoACAnalog
+
         if hardware_io_type == PiGPIO:
             form = PiGpioForm(initial=initial)
             form.type = PiGPIO
@@ -172,6 +181,7 @@ class HardwareViewSet(viewsets.ModelViewSet):
     DeviceFile = 'Device File'
     MCPChannel = 'MCP Channel'
     PiPicoAnalog = 'Pi Pico Analog'
+    PiPicoACAnalog = 'Pi Pico AC Analog'
     PiGPIO = 'Pi GPIO'
 
     def postHardwareIO(request):
@@ -194,6 +204,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 hardware_form = MCPAnalogIoForm(request.POST)
             if hardware_io_type == PiPicoAnalog:
                 hardware_form = PiPicoAnalogIoForm(request.POST)
+            if hardware_io_type == PiPicoACAnalog:
+                hardware_form = PiPicoACAnalogIoForm(request.POST)
             if hardware_io_type == PiGPIO:
                 hardware_form = PiGpioForm(request.POST)
             # save the data and after fetch the object in instance
@@ -352,6 +364,11 @@ class HardwareViewSet(viewsets.ModelViewSet):
             return HttpResponse(render(request, 'hardwares.html'))
 
 
+from data.forms.forms import DataTransform, DataTransformRoot
+from data.models.models import DataTransformer
+from data.serializers.serializers import DataTransformerTreeSerializer
+
+
 class AccessoryViewSet(viewsets.ModelViewSet):
     queryset = Accessory.objects.all()
     serializer_class = AccessorySerializer
@@ -369,16 +386,30 @@ class AccessoryViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         print('retrieve')
         print(str(request.path_info))
+
         accessory = Accessory.objects.get(**kwargs)
         calibrations = accessory.calibration_set.all()
         accessory_form = AccessoryForm(instance=accessory)
         calibration_form = CalibrationForm(initial={'accessory': accessory})
+
+        # datatransformerset = inlineformset_factory(DataTransformer, DataTransformer,formset=DataTransformerForm,
+        #                                            fk_name='parent', form=DataTransform,extra=0)
+
+        if accessory.has_data_transformer:
+            data_transformer = accessory.datatransformer
+            formset = DataTransformRoot(instance=data_transformer)
+        else:
+            data_transformer_root = DataTransformer.objects.create(accessory=accessory)
+            data_transformer_root.save()
+            formset = DataTransformRoot(instance=data_transformer_root)
+
         if request.accepted_renderer.format == 'html':
             return Response(
-                {"accessory_form": accessory_form, "calibration_form": calibration_form, "calibrations": calibrations},
+                {"accessory_form": accessory_form, "calibration_form": calibration_form, "calibrations": calibrations,
+                 "data_transformer_form": formset},
                 template_name='accessory.html')
         else:
-            return super(AccessoryViewSet, self).retrieve()
+            return super(AccessoryViewSet, self).retrieve(request, *args, **kwargs)
 
     def postAccessory(request):
         # request should be ajax and method should be POST.
@@ -400,6 +431,32 @@ class AccessoryViewSet(viewsets.ModelViewSet):
 
         # some error occured
         return JsonResponse({"error": ""}, status=400)
+
+    def postDataTransformer(request, accessory_id):
+        print(str(request.POST))
+        print('post data transformer')
+        # request should be ajax and method should be POST.
+        form = DataTransformRoot(instance=DataTransformer.objects.get(pk=request.POST['id']),
+                             data=request.POST)
+        if form.is_valid():
+            form.save(True)
+        else:
+            print(form.errors)
+
+        data_transformer_root = form.save()
+        data_transformer_family = data_transformer_root.get_family()
+        children_dict = defaultdict(list)
+        for descendant in data_transformer_family:
+            for child in descendant.get_children():
+                children_dict[descendant.pk].append(child)
+
+        context = {}
+        context['children'] = children_dict
+        serializer = DataTransformerTreeSerializer(data_transformer_root, context=context)
+        print(str(serializer.data))
+
+        return JsonResponse({"instance": serializer.data}, status=200)
+
 
     def postCalibration(request):
         print('post calibration')
@@ -606,21 +663,10 @@ class HubViewSet(viewsets.ModelViewSet):
     queryset = Hub.objects.all()
     serializer_class = HubSerializer
     renderer_classes = (renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
+    context_object_name = 'all_hubs'
 
-    def listHubHardware(self, hub_id):
-        hardware = Hub.objects.get(pk=hub_id).hardware_set.all()
-        serialized_hardware = HardwareSerializer().to_json_array(hardware)
-        return JsonResponse(serialized_hardware, status=200, safe=False)
-
-    def listHubChannels(self, hub_id):
-        channels = Hub.objects.get(pk=hub_id).channel_set.all()
-        serialized_channels = ChannelSerializer(many=True).to_representation(channels)
-        return JsonResponse(serialized_channels, status=200, safe=False)
-
-    def listHubAccessories(self, hub_id):
-        accessories = Hub.objects.get(pk=hub_id).accessory_set.all()
-        serialized_accessories = AccessorySerializer(many=True).to_representation(accessories)
-        return JsonResponse(serialized_accessories, status=200, safe=False)
+    def get_queryset(self):
+        return Hub.objects.all()
 
     def about(self, *args, **kwargs):
         api_about = {}
@@ -655,8 +701,7 @@ class HubViewSet(viewsets.ModelViewSet):
             hub_data = HubSerializer(instance=hub).to_representation(hub)
             return JsonResponse(hub_data, status=200)
 
-
-    def postHub( request):
+    def postHub(request):
         # request should be ajax and method should be POST.
         if request.is_ajax() and request.method == "POST":
             # get the form data
@@ -722,6 +767,8 @@ class IOViewSet(viewsets.ModelViewSet):
             hardware_form = MCPAnalogIoForm(instance=instance)
         if hardware_io_type == PiPicoAnalog:
             hardware_form = PiPicoAnalogIoForm(instance=instance)
+        if hardware_io_type == PiPicoACAnalog:
+            hardware_form = PiPicoACAnalogIoForm(instance=instance)
         if hardware_io_type == PiGPIO:
             hardware_form = PiGpioForm(instance=instance)
 
@@ -770,3 +817,58 @@ class IOViewSet(viewsets.ModelViewSet):
 
 def video_streams(request):
     return render(request, "streams.html", None)
+
+
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import render, redirect
+
+
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('hubs')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+@api_view(('GET',))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def listHubHardware(request, hub_id):
+    form_type = HardwareTypeForm(initial={'type': 'PiPico'})
+    hardware_form = HardwarePiPicoForm(initial={'type': 'PiPico'})
+    hardware = Hub.objects.get(pk=hub_id).hardware_set.all()
+    if request.accepts("text/html"):
+        return Response({"form": hardware_form, "type_form": form_type, "hardwares": hardware},
+                        template_name='hardwares.html')
+
+    serialized_hardware = HardwareSerializer().to_json_array(hardware)
+    return JsonResponse(serialized_hardware, status=200, safe=False)
+
+
+@api_view(('GET',))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def listHubChannels(request, hub_id):
+    channels = Hub.objects.get(pk=hub_id).channel_set.all()
+    serialized_channels = ChannelSerializer(many=True).to_representation(channels)
+    return JsonResponse(serialized_channels, status=200, safe=False)
+
+
+@api_view(('GET',))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def listHubAccessories(request, hub_id):
+    accessories = Hub.objects.get(pk=hub_id).accessory_set.all()
+
+    if request.accepts("text/html"):
+        form = AccessoryForm()
+        return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
+    serialized_accessories = AccessorySerializer(many=True).to_representation(accessories)
+
+    return JsonResponse(serialized_accessories, status=200, safe=False)

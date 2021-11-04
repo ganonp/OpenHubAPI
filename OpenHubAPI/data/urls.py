@@ -68,6 +68,7 @@ urlpatterns = [
     path('hardwares/<uuid:hardware_id>/config', HardwareViewSet.getConfig),
     path('hardwares/<uuid:hardware_id>/channels', HardwareViewSet.getChannels),
     path('channels/<uuid:channel_id>/io', ChannelViewSet.listIO),
+    path('accessories/<uuid:accessory_id>/data_transformer', AccessoryViewSet.postDataTransformer),
 
 
     # path('<str:room_name>/', views.room, name='room'),

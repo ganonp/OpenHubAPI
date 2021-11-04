@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'polymorphic',
     # 'channels',
     'data',
+    'mptt'
 ]
 
 MIDDLEWARE = [
