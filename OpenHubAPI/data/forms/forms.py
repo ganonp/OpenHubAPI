@@ -472,56 +472,50 @@ class HardwareIOTypeForm(forms.Form):
 
 
 from django.forms.models import inlineformset_factory, BaseModelFormSet, BaseInlineFormSet, BaseModelForm
-from data.models.models import HardwareStats, DataTransformer, DataTransformerConstants, HardwareDataTransformer, \
-    HardwareStatsDataTransformer, DataTransformerTypes
+from data.models.models import ChannelStats, DataTransformer, DataTransformerConstants,  \
+     DataTransformerTypes
 
 
 # DataTransformerInlineFormset = inlineformset_factory(DataTransformer, DataTransformer, fk_name='data_transformer_parent',
 #                                                      extra=1,exclude =['updated_at','created_at'],formset=DataTransformerForm)
 
 class DataConstantsTransformerForm(forms.ModelForm):
-    id = forms.UUIDField(required=False,
-                         widget=forms.HiddenInput(attrs={'class': 'form-control'}),initial=uuid.uuid4)
-
-    index = forms.IntegerField(required=False,
-                               widget=forms.HiddenInput(attrs={'class': 'form-control'}),
-                               initial=0)
-    value = forms.CharField(required=False,
+    value = forms.CharField(required=True,
                             widget=forms.TextInput(attrs={'class': 'form-control'}))
-    data_transformer = forms.ModelChoiceField(required=False, queryset=DataTransformer.objects.all(),
+    data_transformer = forms.ModelChoiceField(required=True, queryset=DataTransformer.objects.all(),
                                               widget=forms.HiddenInput(attrs={'class': 'form-control'}))
 
     class Meta:
         model = DataTransformerConstants
-        fields = ('__all__')
+        fields = ('value','data_transformer')
 
 
-class HardwareTransformerForm(forms.ModelForm):
-    id = forms.UUIDField(required=False,
-                         widget=forms.HiddenInput(attrs={'class': 'form-control'}),initial=uuid.uuid4)
-    index = forms.IntegerField(required=False,
-                               widget=forms.HiddenInput(attrs={'class': 'form-control'}),
-                               initial=0)
-    data_transformer = forms.ModelChoiceField(required=False, queryset=DataTransformer.objects.all(),
-                                              widget=forms.HiddenInput(attrs={'class': 'form-control'}))
-
-    class Meta:
-        model = HardwareDataTransformer
-        fields = ('__all__')
-
-
-class HardwareStatsTransformerForm(forms.ModelForm):
-    id = forms.UUIDField(required=False,
-                         widget=forms.HiddenInput(attrs={'class': 'form-control'}),initial=uuid.uuid4)
-    index = forms.IntegerField(required=False,
-                               widget=forms.HiddenInput(attrs={'class': 'form-control'}),
-                               initial=0)
-    data_transformer = forms.ModelChoiceField(required=False, queryset=DataTransformer.objects.all(),
-                                              widget=forms.HiddenInput(attrs={'class': 'form-control'}))
-
-    class Meta:
-        model = HardwareStatsDataTransformer
-        fields = ('__all__')
+# class HardwareTransformerForm(forms.ModelForm):
+#     id = forms.UUIDField(required=False,
+#                          widget=forms.HiddenInput(attrs={'class': 'form-control'}),initial=uuid.uuid4)
+#     index = forms.IntegerField(required=False,
+#                                widget=forms.HiddenInput(attrs={'class': 'form-control'}),
+#                                initial=0)
+#     data_transformer = forms.ModelChoiceField(required=False, queryset=DataTransformer.objects.all(),
+#                                               widget=forms.HiddenInput(attrs={'class': 'form-control'}))
+#
+#     class Meta:
+#         model = HardwareDataTransformer
+#         fields = ('__all__')
+#
+#
+# class HardwareStatsTransformerForm(forms.ModelForm):
+#     id = forms.UUIDField(required=False,
+#                          widget=forms.HiddenInput(attrs={'class': 'form-control'}),initial=uuid.uuid4)
+#     index = forms.IntegerField(required=False,
+#                                widget=forms.HiddenInput(attrs={'class': 'form-control'}),
+#                                initial=0)
+#     data_transformer = forms.ModelChoiceField(required=False, queryset=DataTransformer.objects.all(),
+#                                               widget=forms.HiddenInput(attrs={'class': 'form-control'}))
+#
+#     class Meta:
+#         model = HardwareStatsDataTransformer
+#         fields = ('__all__')
 
 
 class BaseInlineFormSetWithAddMoreButton(BaseInlineFormSet):
@@ -557,11 +551,24 @@ class BaseInlineFormSetWithAddMoreButton(BaseInlineFormSet):
 
 
 DataConstantsTransformerInlineFormset = inlineformset_factory(DataTransformer, DataTransformerConstants, formset=BaseInlineFormSetWithAddMoreButton, extra=0,
-                                                              form=DataConstantsTransformerForm, can_delete_extra=True)
+                                                              form=DataConstantsTransformerForm, can_delete_extra=True, fk_name='data_transformer')
 # HardwareTransformerInlineFormset = inlineformset_factory(DataTransformer, HardwareDataTransformer, extra=1,
 #                                                          form=HardwareTransformerForm, can_delete_extra=True)
-HardwareStatsTransformerInlineFormset = inlineformset_factory(DataTransformer, HardwareStatsDataTransformer, extra=0, formset=BaseInlineFormSetWithAddMoreButton,
-                                                              form=HardwareStatsTransformerForm, can_delete_extra=True)
+# HardwareStatsTransformerInlineFormset = inlineformset_factory(DataTransformer, HardwareStatsDataTransformer, extra=0, formset=BaseInlineFormSetWithAddMoreButton,
+#                                                               form=HardwareStatsTransformerForm, can_delete_extra=True)
+
+def get_values_for_keys_containing(contains, dict):
+    valid_keys = []
+    for key in dict.keys():
+        if contains in key:
+            valid_keys.append(key)
+
+    sub_dict = {}
+
+    for valid_key in valid_keys:
+        sub_dict[valid_key] = dict[valid_key]
+
+    return sub_dict
 
 from django.utils.safestring import mark_safe
 
@@ -582,79 +589,115 @@ class DataTransform(forms.ModelForm):
         print('Init Data Transform')
 
         super(DataTransform, self).__init__(*args, **kwargs)
+        nested_data_transformer_form_prefix = str(self.instance.id) + 'dataTransformerInlineFormset'
+        nested_constants_form_prefix = str(self.instance.id) + 'DataConstantsTransformerInlineFormset'
+        nested_hardware_outputs_form_prefix = str(self.instance.id) + 'HardwareTransformerForm'
+        nested_hardware_stats_form_prefix = str(self.instance.id) + 'HardwareStatsTransformerInlineFormset'
 
+        nested_data_transformer_form_data = None
+        nested_constants_form_data = None
+        nested_hardware_outputs_form_data = None
+        nested_hardware_stats_form_data = None
+
+        if 'data' in kwargs.keys():
+            query_dict = kwargs['data'].dict()
+            form_data = {}
+            if 'id' in query_dict:
+                form_data['id'] = query_dict['id']
+            if 'accessory' in query_dict:
+                form_data['accessory'] = query_dict['accessory']
+            if 'type' in query_dict:
+                form_data['type'] = query_dict['type']
+
+            nested_data_transformer_form_data = get_values_for_keys_containing(nested_data_transformer_form_prefix,
+                                                                               query_dict)
+            nested_constants_form_data = get_values_for_keys_containing(nested_constants_form_prefix, query_dict)
+            nested_hardware_outputs_form_data = get_values_for_keys_containing(nested_hardware_outputs_form_prefix,
+                                                                               query_dict)
+            nested_hardware_stats_form_data = get_values_for_keys_containing(nested_hardware_stats_form_prefix,
+                                                                             query_dict)
         try:
-            if self.instance.get_children().count() >= 0:
-                print('Adding to child form node: ' + str(self.instance.get_children().count() + 1))
+            if hasattr(self.instance, 'get_children'):
+                print('Adding to root form node: ' + str(self.instance.get_children().count() + 1))
 
                 self.nested_data_transformer_form = dataTransformerInlineFormset(
                     instance=self.instance,
                     queryset=self.instance.get_children(),
                     data=self.data if self.is_bound else None,
                     files=self.files if self.is_bound else None,
-                    initial=[{'parent': str(self.instance.pk), 'accessory': str(self.instance.accessory.id),
-                              'id': str(uuid.uuid4())}],
-                    prefix=str(self.instance.id) + 'dataTransformerInlineFormset'
+                    initial=[{'parent': str(self.instance.id)}],
+                    prefix=nested_data_transformer_form_prefix,
                 )
                 self.nested_data_transformer_form.extra = self.instance.get_children().count()
 
+            else:
 
+                self.nested_data_transformer_form = dataTransformerInlineFormset(
+                    instance=self.instance,
+                    data=self.data if self.is_bound else None,
+                    files=self.files if self.is_bound else None,
+                    prefix=nested_data_transformer_form_prefix,
+                    initial=[{'parent': str(self.instance.id)}],
+                )
+                self.nested_data_transformer_form.extra = 0
         except Exception as e:
             print(str(e))
-            # self.nested_data_transformer_form = dataTransformerInlineFormset(
-            #     instance=self.instance,
-            #     data=self.data if self.is_bound else None,
-            #     files=self.files if self.is_bound else None,
-            #     prefix=str(self.instance.id) + 'dataTransformerInlineFormset'
-            # )
-            # self.nested_data_transformer_form.extra = 0
+            if nested_data_transformer_form_data is not None and len(nested_data_transformer_form_data.keys()) > 0:
+                self.nested_data_transformer_form = dataTransformerInlineFormset(
+                    instance=self.instance,
+                    data=self.data if self.is_bound else None,
+                    files=self.files if self.is_bound else None,
+                    prefix=nested_data_transformer_form_prefix,
+                    initial=[{'parent': str(self.instance.id)}],
+                )
+                self.nested_data_transformer_form.extra = 0
 
         self.nested_constants_form = DataConstantsTransformerInlineFormset(
             instance=self.instance,
-            queryset=self.instance.datatransformerconstants_set,
+            queryset=self.instance.data_transformer_constants,
             data=self.data if self.is_bound else None,
             files=self.files if self.is_bound else None,
-            prefix=str(self.instance.id) + 'DataConstantsTransformerInlineFormset',
-            initial=[{'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}]
+            prefix=nested_constants_form_prefix,
+            initial=[{'data_transformer': str(self.fields['id'].initial)},{'data_transformer':  str(self.fields['id'].initial)},{'data_transformer':  str(self.fields['id'].initial)}]
 
         )
-        self.nested_constants_form.extra = self.instance.datatransformerconstants_set.count()
+        self.nested_constants_form.extra = 0
 
-        hardware_outputs = self.instance.hardwaredatatransformer_set.first()
-        self.nested_hardware_outputs_form = HardwareTransformerForm(
-            instance=hardware_outputs,
-            data=self.data if self.is_bound else None,
-            files=self.files if self.is_bound else None,
-            prefix=str(self.instance.id) + 'HardwareTransformerForm',
-            initial={'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}
-        )
-
-        self.nested_hardware_stats_form = HardwareStatsTransformerInlineFormset(
-            instance=self.instance,
-            queryset=self.instance.hardwarestatsdatatransformer_set,
-            data=self.data if self.is_bound else None,
-            files=self.files if self.is_bound else None,
-            prefix=str(self.instance.id) + 'HardwareStatsTransformerInlineFormset',
-            initial=[{'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}]
-
-        )
-        self.nested_hardware_stats_form.extra = self.instance.hardwarestatsdatatransformer_set.count()
+        # hardware_outputs = self.instance.hardwaredatatransformer_set.first()
+        # self.nested_hardware_outputs_form = HardwareTransformerForm(
+        #     instance=hardware_outputs,
+        #     data=self.data if self.is_bound else None,
+        #     files=self.files if self.is_bound else None,
+        #     prefix=nested_hardware_outputs_form_prefix,
+        #     initial={'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}
+        # )
+        #
+        # self.nested_hardware_stats_form = HardwareStatsTransformerInlineFormset(
+        #     instance=self.instance,
+        #     queryset=self.instance.hardwarestatsdatatransformer_set,
+        #     data=self.data if self.is_bound else None,
+        #     files=self.files if self.is_bound else None,
+        #     prefix=nested_hardware_stats_form_prefix,
+        #     initial=[{'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}]
+        #
+        # )
+        # self.nested_hardware_stats_form.extra = self.instance.hardwarestatsdatatransformer_set.count()
 
     def as_p(self):
         print('wtf')
         print('instance: ' + str(self.instance.id))
         forms = '<div class="row"><div class="col-6">'
 
-        forms = super(DataTransform, self).as_p()
-        forms = forms + '</div><div class="col-6">'
+        forms = forms + super(DataTransform, self).as_p()
 
         if hasattr(self, 'nested_constants_form') and self.nested_constants_form is not None:
             forms = forms + '\n  -' + self.nested_constants_form.as_p()
-        if hasattr(self, 'nested_hardware_outputs_form') and self.nested_hardware_outputs_form is not None:
-            forms = forms + '\n  -' + self.nested_hardware_outputs_form.as_p()
-        if hasattr(self, 'nested_hardware_stats_form') and self.nested_hardware_stats_form is not None:
-            forms = forms + '\n  -' + self.nested_hardware_stats_form.as_p()
+        # if hasattr(self, 'nested_hardware_outputs_form') and self.nested_hardware_outputs_form is not None:
+        #     forms = forms + '\n  -' + self.nested_hardware_outputs_form.as_p()
+        # if hasattr(self, 'nested_hardware_stats_form') and self.nested_hardware_stats_form is not None:
+        #     forms = forms + '\n  -' + self.nested_hardware_stats_form.as_p()
         if hasattr(self, 'nested_data_transformer_form') and self.nested_data_transformer_form is not None:
+            forms = forms + '</div><div class="col-6">'
             print('netdatatransform with number elements: ' + str(len(self.nested_data_transformer_form)))
             forms = forms + '\n       -' + self.nested_data_transformer_form.as_p()
         forms = forms + '</div></div>'
@@ -672,21 +715,21 @@ class DataTransform(forms.ModelForm):
                 self.nested_constants_form.save(commit)
             else:
                 print(self.nested_constants_form.errors)
-        if hasattr(self,
-                   'nested_hardware_outputs_form') and self.nested_hardware_outputs_form is not None:
-
-            if self.nested_hardware_outputs_form.is_valid():
-                self.nested_hardware_outputs_form.save(commit)
-            else:
-                print(self.nested_hardware_outputs_form.errors)
-        if hasattr(self,
-                   'nested_hardware_stats_form') and self.nested_hardware_stats_form is not None:
-            self.nested_hardware_stats_form.instance.refresh_from_db()
-
-            if self.nested_hardware_stats_form.is_valid():
-                self.nested_hardware_stats_form.save(commit)
-            else:
-                print(self.nested_hardware_stats_form.errors)
+        # if hasattr(self,
+        #            'nested_hardware_outputs_form') and self.nested_hardware_outputs_form is not None:
+        #
+        #     if self.nested_hardware_outputs_form.is_valid():
+        #         self.nested_hardware_outputs_form.save(commit)
+        #     else:
+        #         print(self.nested_hardware_outputs_form.errors)
+        # if hasattr(self,
+        #            'nested_hardware_stats_form') and self.nested_hardware_stats_form is not None:
+        #     self.nested_hardware_stats_form.instance.refresh_from_db()
+        #
+        #     if self.nested_hardware_stats_form.is_valid():
+        #         self.nested_hardware_stats_form.save(commit)
+        #     else:
+        #         print(self.nested_hardware_stats_form.errors)
         if hasattr(self,
                    'nested_data_transformer_form') and self.nested_data_transformer_form is not None:
             self.nested_data_transformer_form.instance.refresh_from_db()
@@ -700,7 +743,7 @@ class DataTransform(forms.ModelForm):
 
     class Meta:
         model = DataTransformer
-        fields = ['id', 'accessory', 'parent', 'type']
+        fields = ['id', 'accessory', 'parent','type', 'channels','channel_stats']
 
 
 # DataTransformerFormset = form_factory(DataTransformer,formset=DataTransformerForm)
@@ -713,8 +756,9 @@ dataTransformerInlineFormset = inlineformset_factory(DataTransformer, DataTransf
                                                      )
 
 
+
 class DataTransformRoot(forms.ModelForm):
-    id = forms.UUIDField(required=False,
+    id = forms.UUIDField(required=True,
                          widget=forms.HiddenInput(attrs={'class': 'form-control'}),initial=uuid.uuid4)
     accessory = forms.ModelChoiceField(required=True, queryset=Accessory.objects.all(),
                                        widget=forms.HiddenInput(attrs={'class': 'form-control'}))
@@ -724,6 +768,37 @@ class DataTransformRoot(forms.ModelForm):
     #     super(HardwareTypeForm, self).__init__(*args, **kwargs)
     def __init__(self, *args, **kwargs):
         super(DataTransformRoot, self).__init__(*args, **kwargs)
+        # if hasattr(self.instance, 'id'):
+        #     ins_id = str(self.instance.id)
+        # else:
+        #     ins_id = str(self.instance.id)
+        nested_data_transformer_form_prefix = str(self.instance.id) + 'dataTransformerInlineFormset'
+        nested_constants_form_prefix = str(self.instance.id) + 'DataConstantsTransformerInlineFormset'
+        nested_hardware_outputs_form_prefix = str(self.instance.id) + 'HardwareTransformerForm'
+        nested_hardware_stats_form_prefix = str(self.instance.id) + 'HardwareStatsTransformerInlineFormset'
+
+        nested_data_transformer_form_data = None
+        nested_constants_form_data = None
+        nested_hardware_outputs_form_data = None
+        nested_hardware_stats_form_data = None
+
+        if 'data' in kwargs.keys():
+            query_dict = kwargs['data'].dict()
+            form_data = {}
+            if 'id' in query_dict:
+                form_data['id'] = query_dict['id']
+            if 'accessory' in query_dict:
+                form_data['accessory'] = query_dict['accessory']
+            if 'type' in query_dict:
+                form_data['type'] = query_dict['type']
+
+            nested_data_transformer_form_data = get_values_for_keys_containing(nested_data_transformer_form_prefix,
+                                                                               query_dict)
+            nested_constants_form_data = get_values_for_keys_containing(nested_constants_form_prefix, query_dict)
+            nested_hardware_outputs_form_data = get_values_for_keys_containing(nested_hardware_outputs_form_prefix,
+                                                                               query_dict)
+            nested_hardware_stats_form_data = get_values_for_keys_containing(nested_hardware_stats_form_prefix,
+                                                                             query_dict)
         # self.fields['accessory'].initial = str(self.instance.accessory.pk)
 
         # types = list(
@@ -738,9 +813,8 @@ class DataTransformRoot(forms.ModelForm):
                     queryset=self.instance.get_children(),
                     data=self.data if self.is_bound else None,
                     files=self.files if self.is_bound else None,
-                    initial=[{'parent': str(self.instance.pk), 'accessory': str(self.instance.accessory.id),
-                              'id': str(uuid.uuid4())}],
-                    prefix=str(self.instance.id) + 'dataTransformerInlineFormset',
+                    initial=[{'parent': str(self.instance.pk), 'accessory': str(self.instance.accessory.id)}],
+                    prefix=nested_data_transformer_form_prefix,
                 )
                 self.nested_data_transformer_form.extra = self.instance.get_children().count()
 
@@ -750,44 +824,53 @@ class DataTransformRoot(forms.ModelForm):
                     instance=self.instance,
                     data=self.data if self.is_bound else None,
                     files=self.files if self.is_bound else None,
-                    prefix=str(self.instance.id) + 'dataTransformerInlineFormset',
-                    initial=[{'parent': str(self.instance.pk), 'accessory': str(self.instance.accessory.id),
-                              'id': str(uuid.uuid4())}],
+                    prefix=nested_data_transformer_form_prefix,
+                    initial=[{'parent': str(self.instance.pk),'accessory': str(self.instance.accessory.id)}],
                 )
                 self.nested_data_transformer_form.extra = 0
         except Exception as e:
             print(str(e))
+            if nested_data_transformer_form_data is not None and len(nested_data_transformer_form_data.keys())>0:
+                self.nested_data_transformer_form = dataTransformerInlineFormset(
+                    instance=self.instance,
+                    data=self.data if self.is_bound else None,
+                    files=self.files if self.is_bound else None,
+                    prefix=nested_data_transformer_form_prefix,
+                    initial=[{'parent': str(self.instance.pk),'accessory': str(self.instance.accessory.id)}],
+                )
+                self.nested_data_transformer_form.extra = 0
+
 
         self.nested_constants_form = DataConstantsTransformerInlineFormset(
             instance=self.instance,
-            queryset=self.instance.datatransformerconstants_set,
+            queryset=self.instance.data_transformer_constants,
             data=self.data if self.is_bound else None,
             files=self.files if self.is_bound else None,
-            prefix=str(self.instance.id) + 'DataConstantsTransformerInlineFormset',
-            initial=[{'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}]
+            prefix=nested_constants_form_prefix,
+            initial=[{'data_transformer': str(self.instance.id)},{'data_transformer': str(self.instance.id)},{'data_transformer': str(self.instance.id)},{'data_transformer': str(self.instance.id)}]
 
         )
-        self.nested_constants_form.extra = self.instance.datatransformerconstants_set.count()
+        self.nested_constants_form.extra = 0
 
-        hardware_outputs = self.instance.hardwaredatatransformer_set.first()
-        self.nested_hardware_outputs_form = HardwareTransformerForm(
-            instance=hardware_outputs,
-            data=self.data if self.is_bound else None,
-            files=self.files if self.is_bound else None,
-            prefix=str(self.instance.id) + 'HardwareTransformerForm',
-            initial={'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}
-        )
-
-        self.nested_hardware_stats_form = HardwareStatsTransformerInlineFormset(
-            instance=self.instance,
-            queryset=self.instance.hardwarestatsdatatransformer_set,
-            data=self.data if self.is_bound else None,
-            files=self.files if self.is_bound else None,
-            prefix=str(self.instance.id) + 'HardwareStatsTransformerInlineFormset',
-            initial=[{'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}]
-
-        )
-        self.nested_hardware_stats_form.extra = self.instance.hardwarestatsdatatransformer_set.count()
+        # hardware_outputs = self.instance.hardwaredatatransformer_set.first()
+        # self.nested_hardware_outputs_form = HardwareTransformerForm(
+        #     instance=hardware_outputs,
+        #     data=self.data if self.is_bound else None,
+        #     files=self.files if self.is_bound else None,
+        #     prefix=nested_hardware_outputs_form_prefix,
+        #     initial={'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}
+        # )
+        #
+        # self.nested_hardware_stats_form = HardwareStatsTransformerInlineFormset(
+        #     instance=self.instance,
+        #     queryset=self.instance.hardwarestatsdatatransformer_set,
+        #     data=self.data if self.is_bound else None,
+        #     files=self.files if self.is_bound else None,
+        #     prefix=nested_hardware_stats_form_prefix,
+        #     initial=[{'data_transformer': str(self.instance.pk), 'id': str(uuid.uuid4())}]
+        #
+        # )
+        # self.nested_hardware_stats_form.extra = self.instance.hardwarestatsdatatransformer_set.count()
 
     def as_p(self):
         print('root')
@@ -795,14 +878,14 @@ class DataTransformRoot(forms.ModelForm):
         forms = '<div class="row"><div class="col-6">'
 
         forms = forms + super(DataTransformRoot, self).as_p()
-        forms = forms + '</div><div class="col-6">'
         if hasattr(self, 'nested_constants_form') and self.nested_constants_form is not None:
             forms = forms + '\n  -' + self.nested_constants_form.as_p()
-        if hasattr(self, 'nested_hardware_outputs_form') and self.nested_hardware_outputs_form is not None:
-            forms = forms + '\n  -' + self.nested_hardware_outputs_form.as_p()
-        if hasattr(self, 'nested_hardware_stats_form') and self.nested_hardware_stats_form is not None:
-            forms = forms + '\n  -' + self.nested_hardware_stats_form.as_p()
+        # if hasattr(self, 'nested_hardware_outputs_form') and self.nested_hardware_outputs_form is not None:
+        #     forms = forms + '\n  -' + self.nested_hardware_outputs_form.as_p()
+        # if hasattr(self, 'nested_hardware_stats_form') and self.nested_hardware_stats_form is not None:
+        #     forms = forms + '\n  -' + self.nested_hardware_stats_form.as_p()
         if hasattr(self, 'nested_data_transformer_form') and self.nested_data_transformer_form is not None:
+            forms = forms + '</div><div class="col-6">'
             print('netdatatransform with number elements: ' + str(len(self.nested_data_transformer_form)))
             forms = forms + '\n       -' + self.nested_data_transformer_form.as_p()
         forms = forms + '</div></div>'
@@ -847,5 +930,5 @@ class DataTransformRoot(forms.ModelForm):
 
     class Meta:
         model = DataTransformer
-        fields = ['id', 'accessory', 'type']
+        fields = ['id', 'accessory', 'type', 'channels','channel_stats']
 # DataTransformerFormset = form_factory(DataTransformer,formset=DataTransformerForm)

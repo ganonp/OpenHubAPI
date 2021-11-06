@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from data.models.models import CalibrationConstants, Calibration, Channel, Accessory, HardwareConfig, PiPico, \
     DHT22, MCP3008, ModProbe, VEML7700, Hardware, Hub, SPIIo, SerialIo, PwmIo, I2cIo, DeviceFileIo, MCPAnalogIo, \
-    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer
+    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer,DataTransformerConstants
 
 class RecursiveField(serializers.Serializer):
     def to_representation(self, value):
@@ -211,7 +211,21 @@ class HardwareIOSerializer(serializers.ModelSerializer):
         model = Hardware
         fields = '__all__'
 
+
+class DataTransformerConstantsSerializer(serializers.ModelSerializer):
+    data_transformer = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = DataTransformerConstants
+        fields = '__all__'
+
+
+
 class DataTransformerTreeSerializer(serializers.ModelSerializer):
+    data_transformer_constants = DataTransformerConstantsSerializer(read_only=True,many=True)
+    channels = serializers.PrimaryKeyRelatedField(read_only=True,many=True)
+    channel_stats = serializers.PrimaryKeyRelatedField(read_only=True,many=True)
+
     children = serializers.SerializerMethodField(source='get_children')
     class Meta:
         model=DataTransformer

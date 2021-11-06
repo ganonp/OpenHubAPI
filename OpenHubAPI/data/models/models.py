@@ -299,9 +299,9 @@ class HardwareConfig(models.Model):
         ]
 
 
-class HardwareStats(models.Model):
+class ChannelStats(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    hardware = models.ManyToManyField(Channel)
+    channel = models.ManyToManyField(Channel)
 
     type = models.CharField(max_length=255, null=True)
     value = models.FloatField(null=True)
@@ -335,9 +335,10 @@ class DataTransformer(MPTTModel):
         blank=True,
         null=True
     )
+    channels = models.ManyToManyField(Channel, blank=True, null=True, default=None)
+    channel_stats = models.ManyToManyField(ChannelStats,blank=True, null=True, default=None)
 
-
-    type = models.ForeignKey(DataTransformerTypes, on_delete=models.DO_NOTHING, blank=True, null=True, default=None)
+    type = models.ForeignKey(DataTransformerTypes,on_delete=models.DO_NOTHING,blank=True, null=True, default=None)
 
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     updated_at = models.DateTimeField(blank=True,auto_now=True)
@@ -361,53 +362,11 @@ class DataTransformer(MPTTModel):
 
 class DataTransformerConstants(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,blank=True,null=False)
-    data_transformer = models.ForeignKey(DataTransformer, on_delete=models.CASCADE, blank=True, null=True)
+    data_transformer = models.ForeignKey(DataTransformer, related_name='data_transformer_constants', on_delete=models.CASCADE, blank=False, null=False)
     index = models.IntegerField(blank=True, null=True, default=None)
-    value = models.FloatField(blank=True,null=False)
+    value = models.FloatField(blank=False,null=False)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.created_at:
-            self.created_at = timezone.now()
-        self.updated_at = timezone.now()
-
-        return super().save(*args, **kwargs)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['id', 'data_transformer']),
-        ]
-
-
-class HardwareDataTransformer(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    hardware = models.ManyToManyField(Channel,blank=True)
-    data_transformer = models.ForeignKey(DataTransformer, on_delete=models.CASCADE, blank=True, null=True)
-    index = models.IntegerField(blank=True, null=True, default=None)
-    updated_at = models.DateTimeField(blank=True,auto_now=True)
-    created_at = models.DateTimeField(blank=True,auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.created_at:
-            self.created_at = timezone.now()
-        self.updated_at = timezone.now()
-
-        return super().save(*args, **kwargs)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['id', 'data_transformer']),
-        ]
-
-
-class HardwareStatsDataTransformer(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4,blank=True,null=False)
-    hardware_stat = models.ForeignKey(HardwareStats, on_delete=models.CASCADE, blank=True, null=True, default=None)
-    data_transformer = models.ForeignKey(DataTransformer, on_delete=models.CASCADE, blank=True, null=True)
-    index = models.IntegerField(blank=True, null=True, default=None)
-    updated_at = models.DateTimeField(blank=True,auto_now=True)
-    created_at = models.DateTimeField(blank=True,auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.created_at:
