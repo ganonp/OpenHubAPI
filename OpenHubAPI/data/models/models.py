@@ -109,9 +109,12 @@ class Channel(models.Model):
 
     def get_name_display(self):
         name = ''
-        if self.hardware is not None:
-            name = name + self.hardware.type + ' / '
-        name = name + self.type + ' / ' + str(self.channel_index) + ' / ' + str(self.id)
+        if self.nickname is not None and self.nickname != '':
+            name = self.nickname
+        else:
+            if self.hardware is not None:
+                name = name + self.hardware.type + ' / '
+                name = name + self.type + ' / ' + str(self.channel_index) + ' / ' + str(self.id)
         return name
 
     class Type(models.TextChoices):
@@ -130,6 +133,12 @@ class Channel(models.Model):
     channel_index = models.IntegerField(null=True)
     type = models.CharField(
         max_length=15
+    )
+    nickname = models.CharField(
+        max_length=100,
+        default=None,
+        blank=True,
+        null=True
     )
     hardware = models.ForeignKey(Hardware, on_delete=models.CASCADE, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -301,9 +310,12 @@ class HardwareConfig(models.Model):
 
 class ChannelStats(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    channel = models.ManyToManyField(Channel)
+    channel = models.ForeignKey(Channel,on_delete=models.CASCADE,blank=True, null=True, default=None)
 
-    type = models.CharField(max_length=255, null=True)
+    MIN = 'MIN'
+    MAX = 'MAX'
+    stats_choices = ((MIN, MIN), (MAX, MAX))
+    type = models.CharField(max_length=25, choices=stats_choices, default=MIN)
     value = models.FloatField(null=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -322,6 +334,12 @@ class ChannelStats(models.Model):
 
 
 class DataTransformerTypes(models.Model):
+    def get_name_display(self):
+        name = ''
+        if self.type is not None:
+            name = name + self.type
+        return name
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     type = models.CharField(
         max_length=15, blank=True, null=True, default=None

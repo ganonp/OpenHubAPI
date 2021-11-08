@@ -29,21 +29,22 @@ class CalibrationSerializer(serializers.ModelSerializer):
         model = Calibration
         fields = ['id', 'type', 'calibration_constants']
 
+class ChannelStatsSerializer(serializers.ModelSerializer):
+    channel = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = CalibrationConstants
+        fields = ['channel', 'type', 'value']
 
 class ChannelSerializer(serializers.ModelSerializer):
+    channelstats = ChannelStatsSerializer(read_only=True,many=True)
+
     class Meta:
         model = Channel
-        fields = ['id', 'type', 'channel_index', 'hardware']
+        fields = ['id', 'type', 'channel_index', 'hardware','channelstats']
 
 
-class AccessorySerializer(serializers.ModelSerializer):
-    # channels = ChannelSerializer(source='channel_set', many=True)
-    calibration = CalibrationSerializer(source='calibration_set', many=True, read_only=False)
 
-    class Meta:
-        model = Accessory
-        fields = ['id', 'category', 'type', 'display_name', 'aid',
-                  'calibration', 'channels']
 
 
 class DataTransformerSerializer(serializers.ModelSerializer):
@@ -225,6 +226,8 @@ class DataTransformerTreeSerializer(serializers.ModelSerializer):
     data_transformer_constants = DataTransformerConstantsSerializer(read_only=True,many=True)
     channels = serializers.PrimaryKeyRelatedField(read_only=True,many=True)
     channel_stats = serializers.PrimaryKeyRelatedField(read_only=True,many=True)
+    accessory = serializers.PrimaryKeyRelatedField(read_only=True)
+
 
     children = serializers.SerializerMethodField(source='get_children')
     class Meta:
@@ -235,3 +238,14 @@ class DataTransformerTreeSerializer(serializers.ModelSerializer):
         children = self.context['children'].get(obj.id, [])
         serializer = DataTransformerTreeSerializer(children, many=True, context=self.context)
         return serializer.data
+
+
+
+class AccessorySerializer(serializers.ModelSerializer):
+    # channels = ChannelSerializer(source='channel_set', many=True)
+    calibration = CalibrationSerializer(source='calibration_set', many=True, read_only=False)
+    datatransformer = DataTransformerTreeSerializer(read_only=True)
+    class Meta:
+        model = Accessory
+        fields = ['id', 'category', 'type', 'display_name', 'aid',
+                  'calibration', 'channels','datatransformer']
