@@ -279,7 +279,12 @@ class Accessory(models.Model):
 
     @property
     def datatransformer(self):
-        return self.datatransformer_set.first().get_root()
+        try:
+            return self.datatransformer_set.first().get_root()
+        except:
+            print('datatransformer error sorta')
+        return self.datatransformer_set.first()
+
 
     class Meta:
         indexes = [
@@ -335,15 +340,15 @@ class ChannelStats(models.Model):
 
 class DataTransformerTypes(models.Model):
     def get_name_display(self):
-        name = ''
-        if self.type is not None:
-            name = name + self.type
-        return name
+        return self.type
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     type = models.CharField(
         max_length=15, blank=True, null=True, default=None
     )
+
+    def __str__(self):
+        return str(self.type)
 
 class DataTransformer(MPTTModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)

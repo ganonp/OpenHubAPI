@@ -7,7 +7,7 @@ from django.forms import ChoiceField
 from data.models.models import Calibration, Hardware, Accessory, Channel, HardwareConfig, \
     CalibrationConstants, DHT22, MCP3008, \
     ModProbe, PiPico, VEML7700, HardwareChannelTypes, Hub, Category, AccessoryType, SPIIo, SerialIo, PwmIo, I2cIo, \
-    DeviceFileIo, MCPAnalogIo, PiGpio, PiPicoAnalogIo, PiPicoACAnalogIo, HardwareIO, PMSA0031, CalibrationStats
+    DeviceFileIo, MCPAnalogIo, PiGpio, PiPicoAnalogIo, PiPicoACAnalogIo, HardwareIO, PMSA0031, ChannelStats
 
 
 class HubForm(forms.ModelForm):
@@ -590,6 +590,9 @@ def get_values_for_keys_containing(contains, dict):
 
 from django.utils.safestring import mark_safe
 
+class DataTransformerTypeField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+         return obj.get_name_display()
 
 class DataTransform(forms.ModelForm):
     id = forms.UUIDField(required=False,
@@ -601,7 +604,7 @@ class DataTransform(forms.ModelForm):
     parent = forms.ModelChoiceField(required=False, queryset=DataTransformer.objects.all(),
                                     widget=forms.HiddenInput(attrs={'class': 'form-control'}))
 
-    type = forms.ModelChoiceField(required=False, queryset=DataTransformerTypes.objects.all())
+    type = DataTransformerTypeField(required=False, queryset=DataTransformerTypes.objects.all())
 
     def __init__(self, *args, **kwargs):
         print('Init Data Transform')
@@ -780,7 +783,7 @@ class DataTransformRoot(forms.ModelForm):
                          widget=forms.HiddenInput(attrs={'class': 'form-control'}),initial=uuid.uuid4)
     accessory = forms.ModelChoiceField(required=True, queryset=Accessory.objects.all(),
                                        widget=forms.HiddenInput(attrs={'class': 'form-control'}))
-    type = forms.ModelChoiceField(required=True, queryset=DataTransformerTypes.objects.all())
+    type = DataTransformerTypeField(required=True, queryset=DataTransformerTypes.objects.all())
 
     # def __init__(self, *args, **kwargs):
     #     super(HardwareTypeForm, self).__init__(*args, **kwargs)

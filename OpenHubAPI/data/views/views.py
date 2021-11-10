@@ -155,10 +155,23 @@ class HardwareViewSet(viewsets.ModelViewSet):
 
     def getChannels(self, hardware_id):
         channels = Hardware.objects.get(pk=str(hardware_id)).channel_set.all()
-        serialized_hardware = ChannelSerializer(many=True).to_representation(channels)
-
+        serialized_channels = []
+        for channel in channels:
+            serialized_channels.append(ChannelSerializer(channel).data)
         # if request.accepted_renderer.format == 'html':
-        return JsonResponse(serialized_hardware, status=200, safe=False)
+        print('get channels '+ str(hardware_id))
+        print(str(serialized_channels))
+        return JsonResponse(serialized_channels, status=200, safe=False)
+
+    # def getChannels(self, hardware_id):
+    #     channels = Hardware.objects.get(pk=str(hardware_id)).channel_set.all()
+    #     for channel in channels:
+    #         channel.channelstat_set.all()
+    #
+    #     serialized_channels = ChannelSerializer(channels,many=True).data
+    #
+    #     # if request.accepted_renderer.format == 'html':
+    #     return JsonResponse(serialized_channels, status=200, safe=False)
 
     def getConfig(self, hardware_id):
         hardware_configs = Hardware.objects.get(pk=str(hardware_id)).hardwareconfig_set.all()
@@ -603,7 +616,7 @@ class ChannelViewSet(viewsets.ModelViewSet):
                      'child_channel': Channel.objects.get(**kwargs).id,
                      'hub': Channel.objects.get(**kwargs).hub.id})
         hardware_ios = Channel.objects.get(**kwargs).hardwareio_set.all()
-        channel_stats = Channel.objects.get(**kwargs).channellstats_set.all()
+        channel_stats = Channel.objects.get(**kwargs).channelstats_set.all()
 
         channel = Channel.objects.get(**kwargs)
 
@@ -904,3 +917,32 @@ class ChannelStatsViewSet(viewsets.ModelViewSet):
             stats_data = ChannelStatsSerializer(instance=stats).to_representation(stats)
             return JsonResponse(stats_data, status=200)
 
+    def create(self, request, *args, **kwargs):
+            print(str(request.POST))
+            try:
+                stats = ChannelStats.objects.get(request.POST['id'])
+
+            except:
+                stats = ChannelStats.objects.create()
+            stats.id = request.POST['id']
+            stats.type = request.POST['type']
+            stats.value = request.POST['value']
+            stats.channel = Channel.objects.get(pk=request.POST['channel'])
+            stats.save()
+
+            stats_data = ChannelStatsSerializer(instance=stats).to_representation(stats)
+            return JsonResponse(stats_data, status=200)
+
+    def update(self, request, *args, **kwargs):
+            try:
+                stats = ChannelStats.objects.get(request.POST['pk'])
+
+            except:
+                stats = ChannelStats.objects.create(request.POST)
+            stats.type = request.POST['type']
+            stats.value = request.POST['value']
+            stats.channel = request.POST['channel']
+            stats.save()
+
+            stats_data = ChannelStatsSerializer(instance=stats).to_representation(stats)
+            return JsonResponse(stats_data, status=200)

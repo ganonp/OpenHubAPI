@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from data.models.models import CalibrationConstants, Calibration, Channel, Accessory, HardwareConfig, PiPico, \
     DHT22, MCP3008, ModProbe, VEML7700, Hardware, Hub, SPIIo, SerialIo, PwmIo, I2cIo, DeviceFileIo, MCPAnalogIo, \
-    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer,DataTransformerConstants
+    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer,DataTransformerConstants,DataTransformerTypes,ChannelStats
 
 class RecursiveField(serializers.Serializer):
     def to_representation(self, value):
@@ -31,17 +31,31 @@ class CalibrationSerializer(serializers.ModelSerializer):
 
 class ChannelStatsSerializer(serializers.ModelSerializer):
     channel = serializers.PrimaryKeyRelatedField(read_only=True)
+    model = serializers.SerializerMethodField()
 
+    def get_model(self, instance):
+        try:
+            return instance.__class__.__name__
+        except:
+            return None
     class Meta:
-        model = CalibrationConstants
-        fields = ['channel', 'type', 'value']
+        model = ChannelStats
+        fields = ['id', 'channel', 'type', 'value','model']
 
 class ChannelSerializer(serializers.ModelSerializer):
-    channelstats = ChannelStatsSerializer(read_only=True,many=True)
+    channelstats_set = ChannelStatsSerializer(read_only=True,many=True, required=False)
+    model = serializers.SerializerMethodField()
+
+
+    def get_model(self, instance):
+        try:
+            return instance.__class__.__name__
+        except:
+            return None
 
     class Meta:
         model = Channel
-        fields = ['id', 'type', 'channel_index', 'hardware','channelstats']
+        fields = ['id', 'type', 'channel_index', 'hardware','channelstats_set','model','keep_statistics']
 
 
 
@@ -49,6 +63,13 @@ class ChannelSerializer(serializers.ModelSerializer):
 
 class DataTransformerSerializer(serializers.ModelSerializer):
     data_transformer_child = RecursiveField(many=True)
+    model = serializers.SerializerMethodField()
+
+    def get_model(self, instance):
+        try:
+            return instance.__class__.__name__
+        except:
+            return None
 
     class Meta:
         model = DataTransformer
@@ -92,6 +113,13 @@ class VEML7700Serializer(serializers.ModelSerializer):
 
 
 class HardwareSerializer(serializers.ModelSerializer):
+    model = serializers.SerializerMethodField()
+
+    def get_model(self, instance):
+        try:
+            return instance.__class__.__name__
+        except:
+            return None
 
     def to_json_array(self, obt_list):
         serialized_hardware = []
@@ -215,11 +243,22 @@ class HardwareIOSerializer(serializers.ModelSerializer):
 
 class DataTransformerConstantsSerializer(serializers.ModelSerializer):
     data_transformer = serializers.PrimaryKeyRelatedField(read_only=True)
+    model = serializers.SerializerMethodField()
+
+    def get_model(self, instance):
+        try:
+            return instance.__class__.__name__
+        except:
+            return None
 
     class Meta:
         model = DataTransformerConstants
         fields = '__all__'
 
+class DataTransformerTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=DataTransformerTypes
+        fields = ['type']  # add here rest of the fields from model
 
 
 class DataTransformerTreeSerializer(serializers.ModelSerializer):
@@ -227,17 +266,29 @@ class DataTransformerTreeSerializer(serializers.ModelSerializer):
     channels = serializers.PrimaryKeyRelatedField(read_only=True,many=True)
     channel_stats = serializers.PrimaryKeyRelatedField(read_only=True,many=True)
     accessory = serializers.PrimaryKeyRelatedField(read_only=True)
-
+    type = serializers.StringRelatedField(many=False)
 
     children = serializers.SerializerMethodField(source='get_children')
+    model = serializers.SerializerMethodField()
+
+    def get_model(self, instance):
+        try:
+            return instance.__class__.__name__
+        except:
+            return None
+
     class Meta:
         model=DataTransformer
         fields = '__all__'  # add here rest of the fields from model
 
     def get_children(self, obj):
-        children = self.context['children'].get(obj.id, [])
-        serializer = DataTransformerTreeSerializer(children, many=True, context=self.context)
-        return serializer.data
+        print(str(self.context))
+        if 'children' in self.context.keys():
+            children = self.context['children'].get(obj.id, [])
+            serializer = DataTransformerTreeSerializer(children, many=True, context=self.context)
+            return serializer.data
+        else:
+            return None
 
 
 
@@ -245,7 +296,15 @@ class AccessorySerializer(serializers.ModelSerializer):
     # channels = ChannelSerializer(source='channel_set', many=True)
     calibration = CalibrationSerializer(source='calibration_set', many=True, read_only=False)
     datatransformer = DataTransformerTreeSerializer(read_only=True)
+    model = serializers.SerializerMethodField()
+
+    def get_model(self, instance):
+        try:
+            return instance.__class__.__name__
+        except:
+            return None
+
     class Meta:
         model = Accessory
         fields = ['id', 'category', 'type', 'display_name', 'aid',
-                  'calibration', 'channels','datatransformer']
+                  'calibration', 'channels','datatransformer','model']

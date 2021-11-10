@@ -20,7 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import routers
 from django.urls import path
 from data.views.views import HardwareViewSet, AccessoryViewSet, CalibrationViewSet, ChannelViewSet, HubViewSet, \
-    IOViewSet, signup,listHubAccessories,listHubHardware,listHubChannels
+    IOViewSet, signup,listHubAccessories,listHubHardware,listHubChannels,ChannelStatsViewSet
 from django.contrib.auth.views import LoginView
 
 
@@ -30,6 +30,7 @@ router.register(r'accessories', AccessoryViewSet)
 router.register(r'hardwares', HardwareViewSet)
 router.register(r'channel', ChannelViewSet)
 router.register(r'calibration', CalibrationViewSet)
+router.register(r'channelstats', ChannelStatsViewSet, basename='channelstats')
 router.register(r'hubs', HubViewSet, basename='hubs')
 router.register(r'io', IOViewSet)
 
