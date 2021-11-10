@@ -920,10 +920,10 @@ class ChannelStatsViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
             print(str(request.POST))
             try:
-                stats = ChannelStats.objects.get(request.POST['id'])
+                stats = ChannelStats.objects.get(pk=request.POST['id'])
 
             except:
-                stats = ChannelStats.objects.create()
+                stats = ChannelStats()
             stats.id = request.POST['id']
             stats.type = request.POST['type']
             stats.value = request.POST['value']

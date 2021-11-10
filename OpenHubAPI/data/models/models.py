@@ -314,6 +314,10 @@ class HardwareConfig(models.Model):
 
 
 class ChannelStats(models.Model):
+    def get_name_display(self):
+        name = self.channel.get_name_display() + ' / ' + self.type
+        return name
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     channel = models.ForeignKey(Channel,on_delete=models.CASCADE,blank=True, null=True, default=None)
 

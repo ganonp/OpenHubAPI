@@ -606,6 +606,9 @@ class DataTransform(forms.ModelForm):
 
     type = DataTransformerTypeField(required=False, queryset=DataTransformerTypes.objects.all())
 
+    channel_stats = DataTransformerTypeField(required=False, queryset=ChannelStats.objects.all())
+
+
     def __init__(self, *args, **kwargs):
         print('Init Data Transform')
 
@@ -707,20 +710,19 @@ class DataTransform(forms.ModelForm):
     def as_p(self):
         print('wtf')
         print('instance: ' + str(self.instance.id))
-        forms = '<div class="row"><div class="col-6">'
+        forms = '<div class="row">'
 
         forms = forms + super(DataTransform, self).as_p()
 
         if hasattr(self, 'nested_constants_form') and self.nested_constants_form is not None:
-            forms = forms + '\n  -' + self.nested_constants_form.as_p()
+            forms = forms + '\n  <div class="col-6">' + self.nested_constants_form.as_p()+ '</div>'
         # if hasattr(self, 'nested_hardware_outputs_form') and self.nested_hardware_outputs_form is not None:
         #     forms = forms + '\n  -' + self.nested_hardware_outputs_form.as_p()
         # if hasattr(self, 'nested_hardware_stats_form') and self.nested_hardware_stats_form is not None:
         #     forms = forms + '\n  -' + self.nested_hardware_stats_form.as_p()
         if hasattr(self, 'nested_data_transformer_form') and self.nested_data_transformer_form is not None:
-            forms = forms + '</div><div class="col-6">'
             print('netdatatransform with number elements: ' + str(len(self.nested_data_transformer_form)))
-            forms = forms + '\n       -' + self.nested_data_transformer_form.as_p()
+            forms = forms + '\n <div class="row">' + self.nested_data_transformer_form.as_p() + '</div>'
         forms = forms + '</div></div>'
 
         return mark_safe(forms)
@@ -784,7 +786,7 @@ class DataTransformRoot(forms.ModelForm):
     accessory = forms.ModelChoiceField(required=True, queryset=Accessory.objects.all(),
                                        widget=forms.HiddenInput(attrs={'class': 'form-control'}))
     type = DataTransformerTypeField(required=True, queryset=DataTransformerTypes.objects.all())
-
+    channel_stats = DataTransformerTypeField(required=False, queryset=ChannelStats.objects.all())
     # def __init__(self, *args, **kwargs):
     #     super(HardwareTypeForm, self).__init__(*args, **kwargs)
     def __init__(self, *args, **kwargs):
@@ -896,11 +898,11 @@ class DataTransformRoot(forms.ModelForm):
     def as_p(self):
         print('root')
         print('instance: ' + str(self.instance.id))
-        forms = '<div class="row"><div class="col-6">'
+        forms = '<div class="row">'
 
         forms = forms + super(DataTransformRoot, self).as_p()
         if hasattr(self, 'nested_constants_form') and self.nested_constants_form is not None:
-            forms = forms + '\n  -' + self.nested_constants_form.as_p()
+            forms = forms + '\n  <div class="col-6">' + self.nested_constants_form.as_p()+ '</div>'
         # if hasattr(self, 'nested_hardware_outputs_form') and self.nested_hardware_outputs_form is not None:
         #     forms = forms + '\n  -' + self.nested_hardware_outputs_form.as_p()
         # if hasattr(self, 'nested_hardware_stats_form') and self.nested_hardware_stats_form is not None:
@@ -908,8 +910,8 @@ class DataTransformRoot(forms.ModelForm):
         if hasattr(self, 'nested_data_transformer_form') and self.nested_data_transformer_form is not None:
             forms = forms + '</div><div class="col-6">'
             print('netdatatransform with number elements: ' + str(len(self.nested_data_transformer_form)))
-            forms = forms + '\n       -' + self.nested_data_transformer_form.as_p()
-        forms = forms + '</div></div>'
+            forms = forms + '\n <div class="row">' + self.nested_data_transformer_form.as_p() + '</div>'
+        forms = forms + '</div>'
         return mark_safe(forms)
 
     def save(self, commit=True):
