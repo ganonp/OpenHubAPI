@@ -1,12 +1,14 @@
 # OpenHubAPI
 
-A GUI for managing hubs, hardware, and homekit accessory configurations for OpenHub. 
+A GUI for managing iOT hubs, hardware, and homekit accessory configurations for [OpenHub](https://github.com/ganonp/OpenHub) and [OpenController](https://github.com/ganonp/OpenController).
+ 
 
 Main features:
 
 * Create, delete, rename OpenHub hubs from one GUI.
 * Add and manage hardware to any OpenHub hub on your network with an easy to use interface.
-* Create HomeKit Accessories using combinations of hardware outputs and mathmatical transformations.
+* Collect statistics on hardware readings.
+* Create HomeKit Accessories using combinations of hardware outputs, mathmatical transformations, and hardware stats.
 
 
 ## Installation 
