@@ -1,12 +1,13 @@
 # OpenHubAPI
 
-This is a GUI for managing the hardware and accessory configuration for OpenHub.
+A GUI for managing hubs, hardware, and homekit accessory configurations for OpenHub. 
 
 Main features:
 
-* Set up and manage hardware with a GUI
-* Pair any hardware with any iOT accessory type.  
-* Manage many iOT hubs from one location.
+* Create, delete, rename OpenHub hubs from one GUI.
+* Add and manage hardware to any OpenHub hub on your network with an easy to use interface.
+* Create HomeKit Accessories using combinations of hardware outputs and mathmatical transformations.
+
 
 ## Installation 
 
