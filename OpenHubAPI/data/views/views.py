@@ -422,6 +422,14 @@ class AccessoryViewSet(viewsets.ModelViewSet):
                  "data_transformer_form": formset},
                 template_name='accessory.html')
         else:
+            data_transformer_family = accessory.datatransformer.get_family()
+            children_dict = defaultdict(list)
+            for descendant in data_transformer_family:
+                for child in descendant.get_children():
+                    children_dict[descendant.pk].append(child)
+
+            context = super().get_serializer_context()
+            context.update({"children": children_dict})
             return super(AccessoryViewSet, self).retrieve(request, *args, **kwargs)
 
     def postAccessory(request):
@@ -449,14 +457,16 @@ class AccessoryViewSet(viewsets.ModelViewSet):
         print(str(request.POST))
         print('post data transformer')
         # request should be ajax and method should be POST.
-        form = DataTransformRoot(instance=DataTransformer.objects.get(pk=request.POST['id']),
-                                 data=request.POST)
-        if form.is_valid():
-            form.save(True)
-        else:
-            print(form.errors)
+        data = request.POST.copy()
+        for key in data.dict().keys():
+            if '__prefix__' in key:
+                data.pop(key)
 
-        data_transformer_root = form.save()
+        form = DataTransformRoot(instance=DataTransformer.objects.get(pk=request.POST['id']),
+                                 data=data)
+
+
+        data_transformer_root = form.save(True)
         data_transformer_family = data_transformer_root.get_family()
         children_dict = defaultdict(list)
         for descendant in data_transformer_family:
@@ -882,7 +892,17 @@ def listHubAccessories(request, hub_id):
     if request.accepts("text/html"):
         form = AccessoryForm()
         return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
-    serialized_accessories = AccessorySerializer(many=True).to_representation(accessories)
+    serialized_accessories =[]
+    for accessory in accessories:
+        if accessory.datatransformer is not None:
+            data_transformer_family = accessory.datatransformer.get_family()
+            children_dict = defaultdict(list)
+            for descendant in data_transformer_family:
+                for child in descendant.get_children():
+                    children_dict[descendant.pk].append(child)
+            ser = AccessorySerializer(accessory)
+            ser.context['children'] = children_dict
+            serialized_accessories.append(ser.data)
 
     return JsonResponse(serialized_accessories, status=200, safe=False)
 

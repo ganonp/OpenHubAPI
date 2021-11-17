@@ -362,8 +362,8 @@ class DataTransformer(MPTTModel):
         blank=True,
         null=True
     )
-    channels = models.ManyToManyField(Channel, blank=True, null=True, default=None)
-    channel_stats = models.ManyToManyField(ChannelStats,blank=True, null=True, default=None)
+    channels = models.ManyToManyField(Channel, blank=True, null=True)
+    channel_stats = models.ManyToManyField(ChannelStats,blank=True, null=True)
 
     type = models.ForeignKey(DataTransformerTypes,on_delete=models.DO_NOTHING,blank=True, null=True, default=None)
 

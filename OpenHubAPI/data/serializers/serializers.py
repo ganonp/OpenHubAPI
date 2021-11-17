@@ -62,7 +62,7 @@ class ChannelSerializer(serializers.ModelSerializer):
 
 
 class DataTransformerSerializer(serializers.ModelSerializer):
-    data_transformer_child = RecursiveField(many=True)
+    children = RecursiveField(many=True)
     model = serializers.SerializerMethodField()
 
     def get_model(self, instance):
