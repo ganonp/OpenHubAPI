@@ -15,6 +15,7 @@ Main features:
 
 
 ```
+$ sudo apt-get install python3-pip
 $ sudo python3 pip -m install openhub-api
 $ sudo python3 pip -m OpenHubAPI.install
 ```
