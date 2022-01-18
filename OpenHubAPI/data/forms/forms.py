@@ -7,7 +7,7 @@ from django.forms import ChoiceField
 from data.models.models import Calibration, Hardware, Accessory, Channel, HardwareConfig, \
     CalibrationConstants, DHT22, MCP3008, \
     ModProbe, PiPico, VEML7700, HardwareChannelTypes, Hub, Category, AccessoryType, SPIIo, SerialIo, PwmIo, I2cIo, \
-    DeviceFileIo, MCPAnalogIo, PiGpio, PiPicoAnalogIo, PiPicoACAnalogIo, HardwareIO, PMSA0031, ChannelStats
+    DeviceFileIo, MCPAnalogIo, PiGpio, PiPicoAnalogIo, PiPicoACAnalogIo, HardwareIO, PMSA0031, AM2315, ChannelStats, Pi
 
 
 class HubForm(forms.ModelForm):
@@ -162,6 +162,22 @@ class HardwarePMSA0031Form(HardwareForm):
 
     class Meta:
         model = PMSA0031
+        fields = ("__all__")
+
+class HardwareAM2315Form(HardwareForm):
+    def __init__(self, *args, **kwargs):
+        super(HardwareAM2315Form, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = AM2315
+        fields = ("__all__")
+
+class HardwarePiForm(HardwareForm):
+    def __init__(self, *args, **kwargs):
+        super(HardwarePiForm, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Pi
         fields = ("__all__")
 
 
@@ -442,10 +458,12 @@ DHT22 = 'DHT22'
 MCP3008 = 'MCP3008'
 ModProbe = 'ModProbe'
 PiPico = 'PiPico'
+Pi = 'Pi'
 VEML7700 = 'VEML7700'
 PMSA0031 = 'PMSA0031'
-CHOICES = (('DHT22', 'DHT22'), ('MCP3008', 'MCP3008'), ('ModProbe', 'ModProbe'), ('PiPico', 'PiPico'),
-           ('VEML7700', 'VEML7700'), ('PMSA0031', 'PMSA0031'))
+AM2315 = 'AM2315'
+CHOICES = (('DHT22', 'DHT22'), ('MCP3008', 'MCP3008'), ('ModProbe', 'ModProbe'), ('Pi', 'Pi'),('PiPico', 'PiPico'),
+           ('VEML7700', 'VEML7700'), ('PMSA0031', 'PMSA0031'),('AM2315','AM2315'))
 
 
 class HardwareTypeForm(forms.Form):

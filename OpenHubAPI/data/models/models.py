@@ -36,7 +36,10 @@ class Hardware(PolymorphicModel):
         MCP3008 = 'MCP3008'
         ModProbe = 'ModProbe'
         PiPico = 'PiPico'
+        Pi = 'Pi'
         VEML7700 = 'VEML7700'
+        PMSA0031 = 'PMSA0031'
+        AM2315 = 'AM2315'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     type = models.CharField(
@@ -61,6 +64,9 @@ class Hardware(PolymorphicModel):
             models.Index(fields=['id']),
         ]
 
+class Pi(Hardware):
+    def __init__(self,*args, **kwargs):
+        super(Hardware,self).__init__(*args, **kwargs)
 
 class PiPico(Hardware):
     serial_com = models.CharField(max_length=100, null=True)
@@ -93,13 +99,16 @@ class PMSA0031(Hardware):
     sda = models.IntegerField()
     reset = models.IntegerField()
 
+class AM2315(Hardware):
+    scl = models.IntegerField()
+    sda = models.IntegerField()
 
 class HardwareChannelTypes(models.Model):
     hardware_type = models.CharField(
-        max_length=20
+        max_length=25
     )
     channel_type = models.CharField(
-        max_length=20
+        max_length=25
     )
 
 
@@ -128,11 +137,16 @@ class Channel(models.Model):
         PiPicoRelay = 'PiPicoRelay'
         VEML7700Light = 'VEML7700Light'
         VEML7700Lux = 'VEML7700Lux'
+        PiRelay = 'PiRelay'
+        AM2315Humidity = 'AM2315Humidity'
+        AM2315Temperature = 'AM2315Temperature'
+        PMSA003125 = 'PMSA003125'
+        PMSA0031100 = 'PMSA0031100'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     channel_index = models.IntegerField(null=True)
     type = models.CharField(
-        max_length=15
+        max_length=25
     )
     nickname = models.CharField(
         max_length=100,

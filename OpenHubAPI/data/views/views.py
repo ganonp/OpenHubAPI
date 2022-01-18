@@ -17,9 +17,9 @@ from data.forms.forms import HardwareForm, HardwareDHT22Form, HardwareMCP3008For
     HardwarePiPicoForm, HardwareVEML7700Form, HardwareTypeForm, ChannelForm, HardwareConfigForm, AccessoryForm, \
     CalibrationForm, CalibrationConstantForm, HubForm, HardwareIOTypeForm, SPIIoForm, PwmIoForm, SerialIoForm, \
     I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoACAnalogIoForm, PiPicoAnalogIoForm, PiGpioForm, HardwareIoForm, \
-    HardwarePMSA0031Form,ChannelStatsForm
+    HardwarePMSA0031Form,ChannelStatsForm,HardwarePiForm,HardwareAM2315Form
 from data.models.models import Hardware, DHT22, MCP3008, ModProbe, PiPico, VEML7700, Accessory, Calibration, \
-    CalibrationConstants, Channel, Hub, HardwareIO, ChannelStats
+    CalibrationConstants, Channel, Hub, HardwareIO, ChannelStats, PMSA0031, AM2315
 from data.serializers.serializers import HardwareSerializer, ChannelSerializer, AccessorySerializer, \
     CalibrationSerializer, HubSerializer, HardwareIOSerializer, ChannelStatsSerializer
 
@@ -54,10 +54,14 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 form = HardwareModProbeForm(data=request.POST, instance=hardware)
             if hardware_type == 'PiPico':
                 form = HardwarePiPicoForm(data=request.POST, instance=hardware)
+            if hardware_type == 'Pi':
+                form = HardwarePiForm(data=request.POST, instance=hardware)
             if hardware_type == 'VEML7700':
                 form = HardwareVEML7700Form(data=request.POST, instance=hardware)
             if hardware_type == 'PMSA0031':
                 form = HardwarePMSA0031Form(data=request.POST, instance=hardware)
+            if hardware_type == 'AM2315':
+                form = HardwareAM2315Form(data=request.POST, instance=hardware)
             # save the data and after fetch the object in instance
             if form.is_valid():
                 instance = form.save()
@@ -79,10 +83,14 @@ class HardwareViewSet(viewsets.ModelViewSet):
             form = HardwareModProbeForm(initial={'type': 'ModProbe'})
         if hardware_type == 'PiPico':
             form = HardwarePiPicoForm(initial={'type': 'PiPico'})
+        if hardware_type == 'Pi':
+            form = HardwarePiForm(initial={'type': 'Pi'})
         if hardware_type == 'VEML7700':
             form = HardwareVEML7700Form(initial={'type': 'VEML7700'})
         if hardware_type == 'PMSA0031':
             form = HardwarePMSA0031Form(initial={'type': 'PMSA0031'})
+        if hardware_type == 'AM2315':
+            form = HardwareAM2315Form(initial={'type': 'AM2315'})
         return HttpResponse(form.as_p())
 
     def getHardwareIoForm(request):
@@ -249,10 +257,14 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 hardware_form = HardwareModProbeForm(request.POST)
             if hardware_type == 'PiPico':
                 hardware_form = HardwarePiPicoForm(request.POST)
+            if hardware_type == 'Pi':
+                hardware_form = HardwarePiForm(request.POST)
             if hardware_type == 'VEML7700':
                 hardware_form = HardwareVEML7700Form(request.POST)
             if hardware_type == 'PMSA0031':
-                form = HardwarePMSA0031Form(request.POST)
+                hardware_form = HardwarePMSA0031Form(request.POST)
+            if hardware_type == 'AM2315':
+                hardware_form = HardwareAM2315Form(request.POST)
 
             # save the data and after fetch the object in instance
             if hardware_form.is_valid():
@@ -263,7 +275,7 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 return JsonResponse({"instance": ser_instance}, status=200)
             else:
                 # some form errors occured.
-                return JsonResponse({"error": hardware_form.errors}, status=400)
+                return JsonResponse({"error": str(hardware_form.errors)}, status=400)
         elif request.method == "POST":
             import json
             body_json = json.loads(request.body.decode('utf-8'))
@@ -299,12 +311,17 @@ class HardwareViewSet(viewsets.ModelViewSet):
                                                      initial={'type': 'ModProbe'})
             if hardware_type == 'PiPico':
                 hardware_form = HardwarePiPicoForm(instance=PiPico.objects.get(**kwargs), initial={'type': 'PiPico'})
+            if hardware_type == 'Pi':
+                hardware_form = HardwarePiForm(instance=Pi.objects.get(**kwargs), initial={'type': 'Pi'})
             if hardware_type == 'VEML7700':
                 hardware_form = HardwareVEML7700Form(instance=VEML7700.objects.get(**kwargs),
                                                      initial={'type': 'VEML7700'})
             if hardware_type == 'PMSA0031':
                 hardware_form = HardwarePMSA0031Form(instance=PMSA0031.objects.get(**kwargs),
                                                      initial={'type': 'PMSA0031'})
+            if hardware_type == 'AM2315':
+                hardware_form = HardwareAM2315Form(instance=AM2315.objects.get(**kwargs),
+                                                     initial={'type': 'AM2315'})
         except:
             hardware_form = HardwareForm(instance=Hardware.objects.get(**kwargs))
 
@@ -336,7 +353,7 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 return JsonResponse({"instance": ser_instance}, status=200)
             else:
                 # some form errors occured.
-                return JsonResponse({"error": form.errors}, status=400)
+                return JsonResponse({"error": str(form.errors)}, status=400)
 
         # some error occured
         return JsonResponse({"error": ""}, status=400)
