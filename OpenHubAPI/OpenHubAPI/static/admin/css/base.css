@@ -6,8 +6,8 @@
 
 /* VARIABLE DEFINITIONS */
 :root {
-  --primary: #79aec8;
-  --secondary: #417690;
+  --primary: #79AEC8FF;
+  --secondary: #598496;
   --accent: #f5dd5d;
   --primary-fg: #fff;
 
@@ -21,7 +21,7 @@
   --header-branding-color: white;
   --header-bg: var(--secondary);
   /*--header-link-color: var(--primary-fg);*/
-  --header-link-color: white;
+  --header-link-color: black;
 
   --breadcrumbs-fg: #c4dce8;
   --breadcrumbs-link-fg: var(--body-bg);
@@ -61,13 +61,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary: #264b5d;
+    --primary: #79aec8;
     --primary-fg: #eee;
 
     --body-fg: #eeeeee;
     --body-bg: #121212;
     --body-quiet-color: #e0e0e0;
-    --body-loud-color: #ffffff;
+    --body-loud-color: #000000;
 
     --breadcrumbs-link-fg: #e0e0e0;
     --breadcrumbs-bg: var(--primary);
@@ -154,7 +154,7 @@ h1 {
     margin: 0 0 20px;
     font-weight: 300;
     font-size: 20px;
-    color: var(--body-quiet-color);
+    color: var(--body-loud-color);
 }
 
 h2 {

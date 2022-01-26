@@ -5,10 +5,11 @@ from django.utils import timezone
 import time
 from polymorphic.models import PolymorphicModel
 from mptt.models import MPTTModel, TreeForeignKey
-
+from django.contrib.auth.models import User
 
 class Hub(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
     ip = models.URLField()
     category = models.CharField(max_length=255, null=True)
     type = models.CharField(max_length=255, null=True)
@@ -42,6 +43,8 @@ class Hardware(PolymorphicModel):
         AM2315 = 'AM2315'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
+
     type = models.CharField(
         max_length=10,
         choices=Type.choices,
@@ -144,6 +147,7 @@ class Channel(models.Model):
         PMSA0031100 = 'PMSA0031100'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
     channel_index = models.IntegerField(null=True)
     type = models.CharField(
         max_length=25
@@ -190,6 +194,8 @@ class HardwareIO(PolymorphicModel):
     label = models.CharField(max_length=255, null=True)
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
+
     parent_hardware = models.ForeignKey(Hardware, on_delete=models.CASCADE, blank=True, null=True,
                                         related_name="%(app_label)s_%(class)s_related",
                                         related_query_name="%(app_label)s_%(class)ss")
@@ -270,6 +276,8 @@ class PiGpio(HardwareIO):
 
 class Accessory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
+
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE, null=False)
 
     category = models.CharField(max_length=255, null=True)
@@ -308,6 +316,7 @@ class Accessory(models.Model):
 
 class HardwareConfig(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
     type = models.CharField(max_length=255, null=True)
     value = models.CharField(max_length=255, null=True)
     hardware = models.ForeignKey(Hardware, on_delete=models.CASCADE, blank=True, null=True)
@@ -333,6 +342,8 @@ class ChannelStats(models.Model):
         return name
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
+
     channel = models.ForeignKey(Channel,on_delete=models.CASCADE,blank=True, null=True, default=None)
 
     MIN = 'MIN'
@@ -370,6 +381,8 @@ class DataTransformerTypes(models.Model):
 
 class DataTransformer(MPTTModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
+
     accessory = models.ForeignKey(
         Accessory,
         on_delete=models.CASCADE,
@@ -403,6 +416,8 @@ class DataTransformer(MPTTModel):
 
 class DataTransformerConstants(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,blank=True,null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
+
     data_transformer = models.ForeignKey(DataTransformer, related_name='data_transformer_constants', on_delete=models.CASCADE, blank=False, null=False)
     index = models.IntegerField(blank=True, null=True, default=None)
     value = models.FloatField(blank=False,null=False)

@@ -76,6 +76,8 @@
     </div>
 {% endblock content %}
 {% block javascript %}
+        {{ block.super }}
+
     <script>
         $("#hardware-type-selection-form").submit(function (e) {
             e.preventDefault();

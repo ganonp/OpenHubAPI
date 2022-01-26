@@ -110,6 +110,8 @@
 {% endblock content %}
 
 {% block javascript %}
+        {{ block.super }}
+
     <script>
         $("#hardware-io-form").submit(function (e) {
             // preventing from page reload and default actions

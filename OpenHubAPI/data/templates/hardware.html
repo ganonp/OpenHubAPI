@@ -133,6 +133,8 @@
 {% endblock content %}
 
 {% block javascript %}
+        {{ block.super }}
+
     <script>
 
     $("#hardware-io-type-form").submit(function (e) {

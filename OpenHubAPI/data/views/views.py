@@ -40,6 +40,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
     renderer_classes = (renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
 
     def updateHardware(request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "user not authenticated"}, status=400)
         if request.is_ajax and request.method == "POST":
             # get the form data
             hardware = Hardware.objects.get(pk=request.POST['initial-id'])
@@ -65,6 +67,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
             # save the data and after fetch the object in instance
             if form.is_valid():
                 instance = form.save()
+                instance.user = request.user
+                instance.save()
                 print(str(instance))
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
@@ -76,21 +80,21 @@ class HardwareViewSet(viewsets.ModelViewSet):
         form = HardwareTypeForm(request.POST)
         hardware_type = form.data['type']
         if hardware_type == 'DHT22':
-            form = HardwareDHT22Form(initial={'type': 'DHT22'})
+            form = HardwareDHT22Form(initial={'type': 'DHT22', "user":request.user})
         if hardware_type == 'MCP3008':
-            form = HardwareMCP3008Form(initial={'type': 'MCP3008'})
+            form = HardwareMCP3008Form(initial={'type': 'MCP3008', "user":request.user})
         if hardware_type == 'ModProbe':
-            form = HardwareModProbeForm(initial={'type': 'ModProbe'})
+            form = HardwareModProbeForm(initial={'type': 'ModProbe', "user":request.user})
         if hardware_type == 'PiPico':
-            form = HardwarePiPicoForm(initial={'type': 'PiPico'})
+            form = HardwarePiPicoForm(initial={'type': 'PiPico', "user":request.user})
         if hardware_type == 'Pi':
-            form = HardwarePiForm(initial={'type': 'Pi'})
+            form = HardwarePiForm(initial={'type': 'Pi', "user":request.user})
         if hardware_type == 'VEML7700':
-            form = HardwareVEML7700Form(initial={'type': 'VEML7700'})
+            form = HardwareVEML7700Form(initial={'type': 'VEML7700', "user":request.user})
         if hardware_type == 'PMSA0031':
-            form = HardwarePMSA0031Form(initial={'type': 'PMSA0031'})
+            form = HardwarePMSA0031Form(initial={'type': 'PMSA0031', "user":request.user})
         if hardware_type == 'AM2315':
-            form = HardwareAM2315Form(initial={'type': 'AM2315'})
+            form = HardwareAM2315Form(initial={'type': 'AM2315', "user":request.user})
         return HttpResponse(form.as_p())
 
     def getHardwareIoForm(request):
@@ -206,9 +210,12 @@ class HardwareViewSet(viewsets.ModelViewSet):
     PiGPIO = 'Pi GPIO'
 
     def postHardwareIO(request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "user not authenticated"}, status=400)
         # request should be ajax and method should be POST.
         if request.is_ajax and request.method == "POST":
             # get the form data
+
             hardware_io_form = HardwareIoForm(request.POST)
             hardware_io_type = hardware_io_form.data['type']
             if hardware_io_type == SPI:
@@ -232,6 +239,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
             # save the data and after fetch the object in instance
             if hardware_form.is_valid():
                 instance = hardware_form.save()
+                instance.user = request.user;
+                instance.save()
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
                 # send to client side.
@@ -244,8 +253,11 @@ class HardwareViewSet(viewsets.ModelViewSet):
         return JsonResponse({"error": ""}, status=400)
 
     def postHardware(request):
+
         # request should be ajax and method should be POST.
         if request.is_ajax() and request.method == "POST":
+            if not request.user.is_authenticated:
+                return JsonResponse({"error": "user not authenticated"}, status=400)
             # get the form data
             hardware_form = HardwareForm(request.POST)
             hardware_type = request.POST['type']
@@ -269,6 +281,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
             # save the data and after fetch the object in instance
             if hardware_form.is_valid():
                 instance = hardware_form.save()
+                instance.user = request.user;
+                instance.save()
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
                 # send to client side.
@@ -284,6 +298,7 @@ class HardwareViewSet(viewsets.ModelViewSet):
             pi_pico.type = body_json['type']
             pi_pico.hub = Hub.objects.get(pk=body_json['hub'])
             pi_pico.pi_gpio_interrupt = 1
+            pi_pico.user = request.user
             pi_pico.save()
             ser_instance = django_serializers.serialize('json', [pi_pico, ])
 
@@ -338,6 +353,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 template_name='hardware.html')
 
     def postChannel(request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error":"user not authenticated"}, status=400)
         # request should be ajax and method should be POST.
         if request.is_ajax and request.method == "POST":
             # get the form data
@@ -345,6 +362,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
             # save the data and after fetch the object in instance
             if form.is_valid():
                 instance = form.save()
+                instance.user = request.user
+                instance.save()
                 print(str(instance))
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
@@ -359,6 +378,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
         return JsonResponse({"error": ""}, status=400)
 
     def postConfig(request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error":"user not authenticated"}, status=400)
         # request should be ajax and method should be POST.
         if request.is_ajax and request.method == "POST":
             # get the form data
@@ -366,6 +387,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
             # save the data and after fetch the object in instance
             if form.is_valid():
                 instance = form.save()
+                instance.user = request.user
+                instance.save()
                 print(str(instance))
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
@@ -380,18 +403,22 @@ class HardwareViewSet(viewsets.ModelViewSet):
         return JsonResponse({"error": ""}, status=400)
 
     def deleteHardware(request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error":"user not authenticated"}, status=400)
         # request should be ajax and method should be POST.
         if request.is_ajax and request.method == "POST":
             # get the form data
             hardware = Hardware.objects.get(
-                pk=request.POST['id'])  # save the data and after fetch the object in instance
-            try:
-                from polymorphic.utils import reset_polymorphic_ctype
-                hardware.delete()
-            except PolymorphicTypeInvalid:
+                pk=request.POST['id'])
+            if hardware.user == request.user or hardware.user is None:
+                # save the data and after fetch the object in instance
+                try:
+                    from polymorphic.utils import reset_polymorphic_ctype
+                    hardware.delete()
+                except PolymorphicTypeInvalid:
 
-                hardware.get_real_concrete_instance_class().delete()
-            return HttpResponse(render(request, 'hardwares.html'))
+                    hardware.get_real_concrete_instance_class().delete()
+                return HttpResponse(render(request, 'hardwares.html'))
 
 
 from data.forms.forms import DataTransform, DataTransformRoot
@@ -405,9 +432,12 @@ class AccessoryViewSet(viewsets.ModelViewSet):
     renderer_classes = (renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
 
     def list(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            form = AccessoryForm(initial={"user":request.user})
+        else:
+            form = AccessoryForm()
         print('list')
         response = super(AccessoryViewSet, self).list(request, *args, **kwargs)
-        form = AccessoryForm()
         accessories = Accessory.objects.all()
         if request.accepted_renderer.format == 'html':
             return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
@@ -450,6 +480,8 @@ class AccessoryViewSet(viewsets.ModelViewSet):
             return super(AccessoryViewSet, self).retrieve(request, *args, **kwargs)
 
     def postAccessory(request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error":"user not authenticated"}, status=400)
         # request should be ajax and method should be POST.
         if request.is_ajax and request.method == "POST":
             # get the form data
@@ -457,6 +489,8 @@ class AccessoryViewSet(viewsets.ModelViewSet):
             # save the data and after fetch the object in instance
             if form.is_valid():
                 instance = form.save()
+                instance.user = request.user
+                instance.save()
                 print(str(instance))
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
@@ -471,6 +505,9 @@ class AccessoryViewSet(viewsets.ModelViewSet):
         return JsonResponse({"error": ""}, status=400)
 
     def postDataTransformer(request, accessory_id):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error":"user not authenticated"}, status=400)
+
         print(str(request.POST))
         print('post data transformer')
         # request should be ajax and method should be POST.
@@ -484,11 +521,15 @@ class AccessoryViewSet(viewsets.ModelViewSet):
 
 
         data_transformer_root = form.save(True)
+        data_transformer_root.user = request.user
+        data_transformer_root.save()
         data_transformer_family = data_transformer_root.get_family()
         children_dict = defaultdict(list)
         for descendant in data_transformer_family:
             for child in descendant.get_children():
                 children_dict[descendant.pk].append(child)
+                child.user = request.user
+                child.save()
 
         context = {}
         context['children'] = children_dict
@@ -522,13 +563,15 @@ class AccessoryViewSet(viewsets.ModelViewSet):
 
     def updateAccessory(request):
         # request should be ajax and method should be POST.
-        if request.is_ajax and request.method == "PATCH":
+        if request.is_ajax and request.method == "PATCH" and request.user.is_authenticated():
             # get the form data
             form = AccessoryForm(instance=Accessory.objects.get(pk=QueryDict(request.body)['id']),
                                  data=QueryDict(request.body))
             # save the data and after fetch the object in instance
             if form.is_valid():
                 instance = form.save()
+                instance.user = request.user
+                instance.save()
                 print(str(instance))
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
@@ -544,13 +587,14 @@ class AccessoryViewSet(viewsets.ModelViewSet):
 
     def deleteAccessory(request):
         # request should be ajax and method should be POST.
-        if request.is_ajax and request.method == "DELETE":
+        if request.is_ajax and request.method == "DELETE" and request.user.is_authenticated():
             # get the form data
             form = AccessoryForm(instance=Accessory.objects.get(pk=QueryDict(request.body)['id']),
                                  data=QueryDict(request.body))
             accessory = Accessory.objects.get(
                 pk=QueryDict(request.body)['id'])  # save the data and after fetch the object in instance
-            accessory.delete()
+            if accessory.user==request.user or accessory.user is None:
+                accessory.delete()
 
             return HttpResponse(render(request, 'accessories.html'))
 
@@ -665,7 +709,7 @@ class ChannelViewSet(viewsets.ModelViewSet):
 
     def updateChannel(request):
         # request should be ajax and method should be POST.
-        if request.is_ajax and request.method == "PATCH":
+        if request.is_ajax and request.method == "PATCH" and request.user.is_authenticated():
             # get the form data
             form = ChannelForm(instance=Channel.objects.get(pk=QueryDict(request.body)['id']),
                                data=QueryDict(request.body))
@@ -673,6 +717,8 @@ class ChannelViewSet(viewsets.ModelViewSet):
             # save the data and after fetch the object in instance
             if form.is_valid():
                 instance = form.save()
+                instance.user = request.user
+                instance.save()
                 print(str(instance))
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
@@ -694,7 +740,8 @@ class ChannelViewSet(viewsets.ModelViewSet):
                                data=QueryDict(request.body))
             channel = Channel.objects.get(
                 pk=QueryDict(request.body)['id'])  # save the data and after fetch the object in instance
-            channel.delete()
+            if channel.user == request.user or channel.user is None:
+                channel.delete()
 
             return HttpResponse(render(request, 'accessories.html'))
 
@@ -734,7 +781,7 @@ class HubViewSet(viewsets.ModelViewSet):
             # accessories_form = AccessoryForm()
             # channel_form = ChannelForm(Hub.objects.get(**kwargs).channel_set.type, instance=channel)
             return Response(
-                {"channel_form": hub_form},
+                {"hub_form": hub_form},
                 template_name='hub.html')
         else:
             hub = Hub.objects.get(**kwargs)
@@ -773,6 +820,43 @@ class HubViewSet(viewsets.ModelViewSet):
 
         # some error occured
         return JsonResponse({"error": ""}, status=400)
+
+    def updateHub(request):
+        # request should be ajax and method should be POST.
+        if request.is_ajax and request.method == "PATCH" and request.user.is_authenticated:
+            # get the form data
+            form = HubForm(instance=Hub.objects.get(pk=QueryDict(request.body)['id']),
+                                 data=QueryDict(request.body))
+            # save the data and after fetch the object in instance
+            if form.is_valid():
+                instance = form.save()
+                instance.user = request.user
+                instance.save()
+                print(str(instance))
+                # serialize in new friend object in json
+                ser_instance = django_serializers.serialize('json', [instance, ])
+                print(str(ser_instance))
+                # send to client side.
+                return JsonResponse({"instance": ser_instance}, status=200)
+            else:
+                # some form errors occured.
+                return JsonResponse({"error": form.errors}, status=400)
+
+        # some error occured
+        return JsonResponse({"error": ""}, status=400)
+
+    def deleteHub(request):
+        # request should be ajax and method should be POST.
+        if request.is_ajax and request.method == "DELETE" and request.user.is_authenticated:
+            # get the form data
+            form = HubForm(instance=Hub.objects.get(pk=QueryDict(request.body)['id']),
+                                 data=QueryDict(request.body))
+            hub = Hub.objects.get(
+                pk=QueryDict(request.body)['id'])  # save the data and after fetch the object in instance
+            if hub.user==request.user or hub.user is None:
+                hub.delete()
+
+            return HttpResponse(render(request, 'hubs.html'))
 
 
 def index(request):
@@ -821,7 +905,8 @@ class IOViewSet(viewsets.ModelViewSet):
 
     def updateIO(request):
         # request should be ajax and method should be POST.
-        if request.is_ajax and request.method == "PATCH":
+
+        if request.is_ajax and request.method == "PATCH" and request.user.is_authenticated():
             # get the form data
             form = HardwareIoForm(instance=Channel.objects.get(pk=QueryDict(request.body)['id']),
                                   data=QueryDict(request.body))
@@ -829,6 +914,8 @@ class IOViewSet(viewsets.ModelViewSet):
             # save the data and after fetch the object in instance
             if form.is_valid():
                 instance = form.save()
+                instance.user = request.user
+                instance.save()
                 print(str(instance))
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
@@ -850,7 +937,8 @@ class IOViewSet(viewsets.ModelViewSet):
                                   data=QueryDict(request.body))
             hardware_io = HardwareIO.objects.get(
                 pk=QueryDict(request.body)['id'])  # save the data and after fetch the object in instance
-            hardware_io.delete()
+            if request.user == hardware_io.user or hardware_io.user is None:
+                hardware_io.delete()
 
             return HttpResponse(render(request, 'accessories.html'))
 
@@ -859,12 +947,13 @@ def video_streams(request):
     return render(request, "streams.html", None)
 
 
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout as django_logout
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 
-
-def signup(request):
+@api_view(('GET','POST'))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def createUser(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
@@ -873,17 +962,29 @@ def signup(request):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(request, user)
-            return redirect('hubs')
+            return redirect('hubs-list')
     else:
         form = UserCreationForm()
-    return render(request, 'registration/signup.html', {'form': form})
+    return Response({"request": request, "form": form},
+                 template_name='registration/create_user.html')
+    # return render(request, 'registration/create_user.html', {'form': form})
+
+@api_view(('GET',))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def logout(request):
+    django_logout(request._request)
+    return redirect('hubs-list')
+
 
 
 @api_view(('GET',))
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def listHubHardware(request, hub_id):
+    if request.user.is_authenticated:
+        hardware_form = HardwarePiPicoForm(initial={'type': 'PiPico',"user": request.user, "hub": Hub.objects.get(pk=hub_id)})
+    else:
+        hardware_form = HardwarePiPicoForm(initial={'type': 'PiPico', "hub": Hub.objects.get(pk=hub_id)})
     form_type = HardwareTypeForm(initial={'type': 'PiPico'})
-    hardware_form = HardwarePiPicoForm(initial={'type': 'PiPico'})
     hardware = Hub.objects.get(pk=hub_id).hardware_set.all()
     if request.accepts("text/html"):
         return Response({"form": hardware_form, "type_form": form_type, "hardwares": hardware},
@@ -904,10 +1005,14 @@ def listHubChannels(request, hub_id):
 @api_view(('GET',))
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def listHubAccessories(request, hub_id):
+
     accessories = Hub.objects.get(pk=hub_id).accessory_set.all()
 
     if request.accepts("text/html"):
-        form = AccessoryForm()
+        if request.user.is_authenticated:
+            form = AccessoryForm(initial={"user":request.user,"hub":Hub.objects.get(pk=hub_id)})
+        else:
+            form = AccessoryForm(initial={"hub":Hub.objects.get(pk=hub_id)})
         return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
     serialized_accessories =[]
     for accessory in accessories:
@@ -965,6 +1070,7 @@ class ChannelStatsViewSet(viewsets.ModelViewSet):
             stats.type = request.POST['type']
             stats.value = request.POST['value']
             stats.channel = Channel.objects.get(pk=request.POST['channel'])
+            stats.user = stats.channel.user
             stats.save()
 
             stats_data = ChannelStatsSerializer(instance=stats).to_representation(stats)
@@ -979,6 +1085,7 @@ class ChannelStatsViewSet(viewsets.ModelViewSet):
             stats.type = request.POST['type']
             stats.value = request.POST['value']
             stats.channel = request.POST['channel']
+            stats.user = stats.channel.user
             stats.save()
 
             stats_data = ChannelStatsSerializer(instance=stats).to_representation(stats)

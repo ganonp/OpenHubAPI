@@ -3,7 +3,6 @@
 {% block title %}{{ title }}{% endblock title %}
 
 {% block content %}
-    <h1>{{ title }}</h1>
     <h1>Hubs</h1>
     <div class="container-fluid">
         <form id="hub-form">
@@ -18,8 +17,13 @@
                 {% for field in form.hidden_fields %}
                     {{ field }}
                 {% endfor %}
-                <input type="submit" class="btn btn-primary" value="Create Hub"/>
             </div>
+            <div class="row">
+                <div class="col-md-1">
+                    <input type="submit" class="btn btn-primary" value="Create Hub"/>
+                </div>
+            </div>
+
         </form>
     </div>
     <hr/>
@@ -39,7 +43,7 @@
             <tbody>
             {% for hub in hubs %}
                 <tr>
-                    <td><a href=/hub/{{ hub.id }} style="color:#0000EE">{{ hub.id }}</a></td>
+                    <td><a href=/hubs/{{ hub.id }} style="color:#0000EE">{{ hub.id }}</a></td>
                     <td>{{ hub.category }}</td>
                     <td>{{ hub.type }}</td>
                     <td>{{ hub.display_name }}</td>
@@ -53,7 +57,9 @@
 
     </div>
 {% endblock content %}
-{% block javascript_0 %}
+{% block javascript %}
+    {{ block.super }}
+
     <script>
         /*
             On submiting the form, send the POST ajax
@@ -103,4 +109,4 @@
             })
         })
     </script>
-{% endblock javascript_0 %}
+{% endblock javascript %}

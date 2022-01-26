@@ -20,7 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import routers
 from django.urls import path
 from data.views.views import HardwareViewSet, AccessoryViewSet, CalibrationViewSet, ChannelViewSet, HubViewSet, \
-    IOViewSet, signup,listHubAccessories,listHubHardware,listHubChannels,ChannelStatsViewSet
+    IOViewSet, createUser,listHubAccessories,listHubHardware,listHubChannels,ChannelStatsViewSet
 from django.contrib.auth.views import LoginView
 
 
@@ -35,13 +35,14 @@ router.register(r'hubs', HubViewSet, basename='hubs')
 router.register(r'io', IOViewSet)
 
 from data.views.views import index
-from data.views.views import video_streams
+from data.views.views import video_streams, logout
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
     url(r'^login/$', LoginView.as_view(template_name="registration/login.html"), name="login"),
+    url(r'^logout/$', logout, name="logout"),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     # path('start', views.start, name='start'),
     # path('calibrate', views.start, name='calibrate'),
@@ -56,6 +57,9 @@ urlpatterns = [
     path('delete/ajax/accessory', AccessoryViewSet.deleteAccessory, name="delete_accessory"),
     path('post/ajax/calibration', AccessoryViewSet.postCalibration, name="post_calibration"),
     path('patch/ajax/accessory', AccessoryViewSet.updateAccessory, name="update_accessory"),
+    path('delete/ajax/hub', HubViewSet.deleteHub, name="delete_hub"),
+    path('patch/ajax/hub', HubViewSet.updateHub, name="update_hub"),
+
     path('patch/ajax/calibration', CalibrationViewSet.updateCalibration, name="update_calibration"),
     path('delete/ajax/channel', ChannelViewSet.deleteChannel, name="delete_channel"),
     path('delete/ajax/hardware', HardwareViewSet.deleteHardware, name="delete_hardware"),
@@ -83,6 +87,7 @@ urlpatterns = [
     path('hubs/<uuid:hub_id>/accessories', view=listHubAccessories),
     path('openhubapi/about', HubViewSet.about),
     path('streams/', video_streams, name="video_streams"),
-    url(r'^signup/$', signup, name='signup'),
+    # url('createuser', createUser, name='create_user'),
+    path('createuser/', createUser, name="create_user"),
 
 ]
