@@ -22,7 +22,7 @@ $ sudo python3 pip -m OpenHubAPI.install
 
 ## UI 
 
-<img width="1664" alt="accessories" src="https://user-images.githubusercontent.com/3904428/142283114-13794608-753e-4c50-ae15-a94a810c5d56.png">
-<img width="1656" alt="channels" src="https://user-images.githubusercontent.com/3904428/142283121-b4e6892d-8f09-47a4-8607-e77258e87f49.png">
-<img width="1654" alt="hardware" src="https://user-images.githubusercontent.com/3904428/142283125-dfa9776a-056f-4ffd-bca1-1fef9b32f76f.png">
-<img width="1656" alt="hubs" src="https://user-images.githubusercontent.com/3904428/142283127-73bab4e0-8174-4683-a10c-c77f077d0e3f.png">
+
+<img width="1622" alt="Screen Shot 2022-01-27 at 3 45 55 PM" src="https://user-images.githubusercontent.com/3904428/151461905-d9f48712-7256-4d01-98a7-02211f3cffd3.png">
+<img width="1630" alt="Screen Shot 2022-01-27 at 3 45 20 PM" src="https://user-images.githubusercontent.com/3904428/151461972-b9c5a553-09c5-45f2-b833-a7ff027e07e7.png">
+<img width="1635" alt="Screen Shot 2022-01-27 at 3 45 42 PM" src="https://user-images.githubusercontent.com/3904428/151462009-85e4a45e-471f-4c59-9c53-028f1a72450b.png">
