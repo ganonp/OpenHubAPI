@@ -128,7 +128,11 @@
         </div>
 
     </div>
-
+{% load static %}
+{% static "RaspberryPiPinout.png" as myphoto %}
+    {% if hardware_form.type.value == "Pi" or hardware_form.type.value == "PiPico" %}
+        <img src="{{ myphoto }}">
+    {% endif %}
 
 {% endblock content %}
 

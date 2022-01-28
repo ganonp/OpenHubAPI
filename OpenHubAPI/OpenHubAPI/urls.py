@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import include
 from rest_framework import routers
 from django.urls import path
-from data.views.views import HardwareViewSet, AccessoryViewSet, CalibrationViewSet, ChannelViewSet, HubViewSet, \
+from data.views.views import HardwareViewSet, AccessoryViewSet, ChannelViewSet, HubViewSet, \
     IOViewSet
 #
 # # Routers provide an easy way of automatically determining the URL conf.

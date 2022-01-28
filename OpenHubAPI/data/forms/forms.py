@@ -4,8 +4,8 @@ from django import forms
 
 from django.forms import ChoiceField
 
-from data.models.models import Calibration, Hardware, Accessory, Channel, HardwareConfig, \
-    CalibrationConstants, DHT22, MCP3008, \
+from data.models.models import Hardware, Accessory, Channel, HardwareConfig, \
+     DHT22, MCP3008, \
     ModProbe, PiPico, VEML7700, HardwareChannelTypes, Hub, Category, AccessoryType, SPIIo, SerialIo, PwmIo, I2cIo, \
     DeviceFileIo, MCPAnalogIo, PiGpio, PiPicoAnalogIo, PiPicoACAnalogIo, HardwareIO, PMSA0031, AM2315, ChannelStats, Pi
 
@@ -34,42 +34,6 @@ class HubForm(forms.ModelForm):
         fields = ("__all__")
 
 
-class CalibrationConstantForm(forms.ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        super(CalibrationConstantForm, self).__init__(*args, **kwargs)
-        ## add a "form-control" class to each form input
-        ## for enabling bootstrap
-
-        for name in self.fields.keys():
-            if name == 'calibration':
-                self.fields[name].widget = forms.HiddenInput()
-            self.fields[name].widget.attrs.update({
-                'class': 'form-control',
-            })
-
-    class Meta:
-        model = CalibrationConstants
-        fields = ("__all__")
-
-
-class CalibrationForm(forms.ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        super(CalibrationForm, self).__init__(*args, **kwargs)
-        ## add a "form-control" class to each form input
-        ## for enabling bootstrap
-        for name in self.fields.keys():
-            if name == 'accessory':
-                self.fields[name].widget = forms.HiddenInput()
-            else:
-                self.fields[name].widget.attrs.update({
-                    'class': 'form-control',
-                })
-
-    class Meta:
-        model = Calibration
-        fields = ("__all__")
 
 
 class ChannelStatsForm(forms.ModelForm):

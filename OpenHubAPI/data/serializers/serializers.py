@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from data.models.models import CalibrationConstants, Calibration, Channel, Accessory, HardwareConfig, PiPico, \
+from data.models.models import  Channel, Accessory, HardwareConfig, PiPico, \
     DHT22, MCP3008, ModProbe, VEML7700, Hardware, Hub, SPIIo, SerialIo, PwmIo, I2cIo, DeviceFileIo, MCPAnalogIo, \
     PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer,DataTransformerConstants,DataTransformerTypes,ChannelStats
 
@@ -9,25 +9,12 @@ class RecursiveField(serializers.Serializer):
         serializer = self.parent.parent.__class__(value, context=self.context)
         return serializer.data
 
-class CalibrationConstantsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CalibrationConstants
-        fields = ['id', 'type', 'value']
-
 
 class HubSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hub
         fields = '__all__'
 
-
-class CalibrationSerializer(serializers.ModelSerializer):
-    calibration_constants = CalibrationConstantsSerializer(source='calibrationconstants_set', many=True,
-                                                           read_only=False)
-
-    class Meta:
-        model = Calibration
-        fields = ['id', 'type', 'calibration_constants']
 
 class ChannelStatsSerializer(serializers.ModelSerializer):
     channel = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -294,7 +281,6 @@ class DataTransformerTreeSerializer(serializers.ModelSerializer):
 
 class AccessorySerializer(serializers.ModelSerializer):
     # channels = ChannelSerializer(source='channel_set', many=True)
-    calibration = CalibrationSerializer(source='calibration_set', many=True, read_only=False)
     datatransformer = DataTransformerTreeSerializer(read_only=True)
     model = serializers.SerializerMethodField()
 
@@ -307,4 +293,4 @@ class AccessorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Accessory
         fields = ['id', 'category', 'type', 'display_name', 'aid',
-                  'calibration', 'channels','datatransformer','model']
+                   'channels','datatransformer','model']

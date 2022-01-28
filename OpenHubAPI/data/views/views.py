@@ -15,13 +15,13 @@ from rest_framework.response import Response
 
 from data.forms.forms import HardwareForm, HardwareDHT22Form, HardwareMCP3008Form, HardwareModProbeForm, \
     HardwarePiPicoForm, HardwareVEML7700Form, HardwareTypeForm, ChannelForm, HardwareConfigForm, AccessoryForm, \
-    CalibrationForm, CalibrationConstantForm, HubForm, HardwareIOTypeForm, SPIIoForm, PwmIoForm, SerialIoForm, \
+     HubForm, HardwareIOTypeForm, SPIIoForm, PwmIoForm, SerialIoForm, \
     I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoACAnalogIoForm, PiPicoAnalogIoForm, PiGpioForm, HardwareIoForm, \
     HardwarePMSA0031Form,ChannelStatsForm,HardwarePiForm,HardwareAM2315Form
-from data.models.models import Hardware, DHT22, MCP3008, ModProbe, PiPico, VEML7700, Accessory, Calibration, \
-    CalibrationConstants, Channel, Hub, HardwareIO, ChannelStats, PMSA0031, AM2315
+from data.models.models import Hardware, DHT22, MCP3008, ModProbe, PiPico, VEML7700, Accessory,  \
+     Channel, Hub, HardwareIO, ChannelStats, PMSA0031, AM2315
 from data.serializers.serializers import HardwareSerializer, ChannelSerializer, AccessorySerializer, \
-    CalibrationSerializer, HubSerializer, HardwareIOSerializer, ChannelStatsSerializer
+     HubSerializer, HardwareIOSerializer, ChannelStatsSerializer
 
 SPI = 'SPI'
 Serial = 'Serial'
@@ -160,8 +160,11 @@ class HardwareViewSet(viewsets.ModelViewSet):
 
         serialized_hardware = HardwareSerializer().to_json_array(hardware)
         if request.accepted_renderer.format == 'html':
-            return Response({"form": hardware_form, "type_form": form_type, "hardwares": hardware},
-                            template_name='hardwares.html')
+            if request.user.is_authenticated:
+                return Response({"form": hardware_form, "type_form": form_type, "hardwares": hardware},
+                                template_name='hardwares.html')
+            else:
+                return redirect('login')
             # return Response({"hardwares": hardware}, template_name='hardwares.html')
         return response
 
@@ -434,23 +437,21 @@ class AccessoryViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             form = AccessoryForm(initial={"user":request.user})
+            print('list')
+            response = super(AccessoryViewSet, self).list(request, *args, **kwargs)
+            accessories = Accessory.objects.all()
+            if request.accepted_renderer.format == 'html':
+                return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
+            return response
         else:
-            form = AccessoryForm()
-        print('list')
-        response = super(AccessoryViewSet, self).list(request, *args, **kwargs)
-        accessories = Accessory.objects.all()
-        if request.accepted_renderer.format == 'html':
-            return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
-        return response
+            return redirect('login')
 
     def retrieve(self, request, *args, **kwargs):
         print('retrieve')
         print(str(request.path_info))
 
         accessory = Accessory.objects.get(**kwargs)
-        calibrations = accessory.calibration_set.all()
         accessory_form = AccessoryForm(instance=accessory)
-        calibration_form = CalibrationForm(initial={'accessory': accessory})
 
         # datatransformerset = inlineformset_factory(DataTransformer, DataTransformer,formset=DataTransformerForm,
         #                                            fk_name='parent', form=DataTransform,extra=0)
@@ -464,10 +465,13 @@ class AccessoryViewSet(viewsets.ModelViewSet):
             formset = DataTransformRoot(instance=data_transformer_root)
 
         if request.accepted_renderer.format == 'html':
-            return Response(
-                {"accessory_form": accessory_form, "calibration_form": calibration_form, "calibrations": calibrations,
-                 "data_transformer_form": formset},
-                template_name='accessory.html')
+            if request.user.is_authenticated:
+                return Response(
+                    {"accessory_form": accessory_form,
+                     "data_transformer_form": formset},
+                    template_name='accessory.html')
+            else:
+                return redirect('login')
         else:
             data_transformer_family = accessory.datatransformer.get_family()
             children_dict = defaultdict(list)
@@ -538,28 +542,7 @@ class AccessoryViewSet(viewsets.ModelViewSet):
 
         return JsonResponse({"instance": serializer.data}, status=200)
 
-    def postCalibration(request):
-        print('post calibration')
 
-        # request should be ajax and method should be POST.
-        if request.is_ajax and request.method == "POST":
-            # get the form data
-            form = CalibrationForm(request.POST)
-            # save the data and after fetch the object in instance
-            if form.is_valid():
-                instance = form.save()
-                print(str(instance))
-                # serialize in new friend object in json
-                ser_instance = django_serializers.serialize('json', [instance, ])
-                print(str(ser_instance))
-                # send to client side.
-                return JsonResponse({"instance": ser_instance}, status=200)
-            else:
-                # some form errors occured.
-                return JsonResponse({"error": form.errors}, status=400)
-
-        # some error occured
-        return JsonResponse({"error": ""}, status=400)
 
     def updateAccessory(request):
         # request should be ajax and method should be POST.
@@ -598,80 +581,6 @@ class AccessoryViewSet(viewsets.ModelViewSet):
 
             return HttpResponse(render(request, 'accessories.html'))
 
-
-class CalibrationViewSet(viewsets.ModelViewSet):
-    queryset = Calibration.objects.all()
-    serializer_class = CalibrationSerializer
-    renderer_classes = (renderers.JSONRenderer, renderers.TemplateHTMLRenderer)
-
-    def retrieve(self, request, *args, **kwargs):
-        print('retrieve')
-        print(str(request.path_info))
-        calibration = Calibration.objects.get(**kwargs)
-        calibration_constants = calibration.calibrationconstants_set.all()
-        calibration_form = CalibrationForm(instance=calibration)
-        calibrationconstants_form = CalibrationConstantForm(initial={'calibration': calibration})
-
-        calibration_constants_forms = []
-
-        for calibration_constant in calibration_constants:
-            calibration_constants_forms.append(CalibrationConstantForm(instance=calibration_constant))
-        if request.accepted_renderer.format == 'html':
-            return Response(
-                {"calibration_form": calibration_form, "calibrationconstants_initial_form": calibrationconstants_form,
-                 "calibrationconstants_forms": calibration_constants_forms,
-                 "calibrations": calibration_constants, "calibration": calibration},
-                template_name='calibration.html')
-        else:
-            return super(CalibrationViewSet, self).retrieve()
-
-    def updateCalibration(request):
-        # request should be ajax and method should be POST.
-        if request.is_ajax and request.method == "UPDATE":
-            # get the form data
-            form = CalibrationForm(request.UPDATE)
-            # save the data and after fetch the object in instance
-            if form.is_valid():
-                instance = form.save()
-                print(str(instance))
-                # serialize in new friend object in json
-                ser_instance = django_serializers.serialize('json', [instance, ])
-                print(str(ser_instance))
-                # send to client side.
-                return JsonResponse({"instance": ser_instance}, status=200)
-            else:
-                # some form errors occured.
-                return JsonResponse({"error": form.errors}, status=400)
-
-        # some error occured
-        return JsonResponse({"error": ""}, status=400)
-
-    def postCalibrationConstant(request):
-        # request should be ajax and method should be POST.
-        if request.is_ajax and request.method == "POST":
-            # get the form data
-            try:
-                initial_calibration_constant = CalibrationConstants.objects.get(id=request.POST['id'])
-                form = CalibrationConstantForm(instance=initial_calibration_constant, data=request.POST)
-            except CalibrationConstants.DoesNotExist:
-                form = CalibrationConstantForm(data=request.POST)
-
-            # save the data and after fetch the object in instance
-            if form.is_valid():
-                instance = form.save()
-                print(str(instance))
-                # serialize in new friend object in json
-                ser_instance = django_serializers.serialize('json', [instance, ])
-                form_json = django_serializers.serialize('json', [instance, ])
-                print(str(ser_instance))
-                # send to client side.
-                return JsonResponse({"instance": ser_instance, "form": form_json}, status=200)
-            else:
-                # some form errors occured.
-                return JsonResponse({"error": form.errors}, status=400)
-
-        # some error occured
-        return JsonResponse({"error": ""}, status=400)
 
 
 class ChannelViewSet(viewsets.ModelViewSet):
@@ -761,28 +670,39 @@ class HubViewSet(viewsets.ModelViewSet):
         return JsonResponse(api_about, status=200, safe=False)
 
     def list(self, request, *args, **kwargs):
-        print('list')
-        response = super(HubViewSet, self).list(request, *args, **kwargs)
-        form = HubForm()
-        hubs = Hub.objects.all()
-        if request.accepted_renderer.format == 'html':
-            return Response({"form": form, "hubs": hubs}, template_name='hubs.html')
-        return response
+        if request.user.is_authenticated:
+            print('list')
+            response = super(HubViewSet, self).list(request, *args, **kwargs)
+            form = HubForm()
+
+            hubs = Hub.objects.filter(
+                user=request.user
+            ) | Hub.objects.filter(
+                user=None
+            )
+            if request.accepted_renderer.format == 'html':
+                return Response({"form": form, "hubs": hubs}, template_name='hubs.html')
+            return response
+        else:
+            return redirect('login')
 
     @csrf_exempt
     def retrieve(self, request, *args, **kwargs):
 
         if request.accepted_renderer.format == 'html':
-            print('retrieve')
-            print(str(request.path_info))
-            hub = Hub.objects.get(**kwargs)
-            hub_form = HubForm(instance=hub)
+            if request.user.is_authenticated:
+                print('retrieve')
+                print(str(request.path_info))
+                hub = Hub.objects.get(**kwargs)
+                hub_form = HubForm(instance=hub)
 
-            # accessories_form = AccessoryForm()
-            # channel_form = ChannelForm(Hub.objects.get(**kwargs).channel_set.type, instance=channel)
-            return Response(
-                {"hub_form": hub_form},
-                template_name='hub.html')
+                # accessories_form = AccessoryForm()
+                # channel_form = ChannelForm(Hub.objects.get(**kwargs).channel_set.type, instance=channel)
+                return Response(
+                    {"hub_form": hub_form},
+                    template_name='hub.html')
+            else:
+                return redirect('login')
         else:
             hub = Hub.objects.get(**kwargs)
             hub_data = HubSerializer(instance=hub).to_representation(hub)
@@ -791,10 +711,14 @@ class HubViewSet(viewsets.ModelViewSet):
     def postHub(request):
         # request should be ajax and method should be POST.
         if request.is_ajax() and request.method == "POST":
+            numHubsWithNoUsers = Hub.objects.filter(user=None).count()
             # get the form data
             form = HubForm(request.POST)
             # save the data and after fetch the object in instance
-            if form.is_valid():
+            if numHubsWithNoUsers >= 20:
+                return JsonResponse({"error": "Too many hubs with no user. Set some up."}, status=400)
+
+            elif form.is_valid() :
                 instance = form.save()
                 print(str(instance))
                 # serialize in new friend object in json
@@ -973,7 +897,7 @@ def createUser(request):
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def logout(request):
     django_logout(request._request)
-    return redirect('hubs-list')
+    return redirect('/login/')
 
 
 
@@ -987,8 +911,11 @@ def listHubHardware(request, hub_id):
     form_type = HardwareTypeForm(initial={'type': 'PiPico'})
     hardware = Hub.objects.get(pk=hub_id).hardware_set.all()
     if request.accepts("text/html"):
-        return Response({"form": hardware_form, "type_form": form_type, "hardwares": hardware},
-                        template_name='hardwares.html')
+        if request.user.is_authenticated:
+            return Response({"form": hardware_form, "type_form": form_type, "hardwares": hardware},
+                            template_name='hardwares.html')
+        else:
+            return redirect('login')
 
     serialized_hardware = HardwareSerializer().to_json_array(hardware)
     return JsonResponse(serialized_hardware, status=200, safe=False)
@@ -1011,9 +938,9 @@ def listHubAccessories(request, hub_id):
     if request.accepts("text/html"):
         if request.user.is_authenticated:
             form = AccessoryForm(initial={"user":request.user,"hub":Hub.objects.get(pk=hub_id)})
+            return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
         else:
-            form = AccessoryForm(initial={"hub":Hub.objects.get(pk=hub_id)})
-        return Response({"form": form, "accessories": accessories}, template_name='accessories.html')
+            return Response(template_name='registration/login.html')
     serialized_accessories =[]
     for accessory in accessories:
         if accessory.datatransformer is not None:

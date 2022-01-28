@@ -19,17 +19,16 @@ from django.urls import include
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import routers
 from django.urls import path
-from data.views.views import HardwareViewSet, AccessoryViewSet, CalibrationViewSet, ChannelViewSet, HubViewSet, \
+from data.views.views import HardwareViewSet, AccessoryViewSet, ChannelViewSet, HubViewSet, \
     IOViewSet, createUser,listHubAccessories,listHubHardware,listHubChannels,ChannelStatsViewSet
 from django.contrib.auth.views import LoginView
 
 
 # Routers provide an easy way of automatically determining the URL conf.
-router = routers.DefaultRouter()
+router = routers.SimpleRouter()
 router.register(r'accessories', AccessoryViewSet)
 router.register(r'hardwares', HardwareViewSet)
 router.register(r'channel', ChannelViewSet)
-router.register(r'calibration', CalibrationViewSet)
 router.register(r'channelstats', ChannelStatsViewSet, basename='channelstats')
 router.register(r'hubs', HubViewSet, basename='hubs')
 router.register(r'io', IOViewSet)
@@ -45,8 +44,7 @@ urlpatterns = [
     url(r'^logout/$', logout, name="logout"),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     # path('start', views.start, name='start'),
-    # path('calibrate', views.start, name='calibrate'),
-    path('index', index, name='index'),
+    # path('index', index, name='index'),
     url(r'^admin/', admin.site.urls),
     path('post/ajax/hardware', HardwareViewSet.postHardware, name="post_hardware"),
     path('post/ajax/hardware/form_type/', HardwareViewSet.getHardwareTypeForm,
@@ -55,19 +53,16 @@ urlpatterns = [
          name="get_hardware_io"),
     path('post/ajax/accessory', AccessoryViewSet.postAccessory, name="post_accessory"),
     path('delete/ajax/accessory', AccessoryViewSet.deleteAccessory, name="delete_accessory"),
-    path('post/ajax/calibration', AccessoryViewSet.postCalibration, name="post_calibration"),
     path('patch/ajax/accessory', AccessoryViewSet.updateAccessory, name="update_accessory"),
     path('delete/ajax/hub', HubViewSet.deleteHub, name="delete_hub"),
     path('patch/ajax/hub', HubViewSet.updateHub, name="update_hub"),
 
-    path('patch/ajax/calibration', CalibrationViewSet.updateCalibration, name="update_calibration"),
     path('delete/ajax/channel', ChannelViewSet.deleteChannel, name="delete_channel"),
     path('delete/ajax/hardware', HardwareViewSet.deleteHardware, name="delete_hardware"),
     path('delete/ajax/io', IOViewSet.deleteIO, name="delete_io"),
 
     path('post/ajax/hardware/io/', HardwareViewSet.postHardwareIO,
          name="post_hardware_io"),
-    path('post/ajax/calibrationconstant', CalibrationViewSet.postCalibrationConstant, name="post_calibration_constant"),
     path('post/ajax/channel', HardwareViewSet.postChannel, name="post_channel"),
     path('patch/ajax/channel', ChannelViewSet.updateChannel, name="update_channel"),
     path('post/ajax/config', HardwareViewSet.postConfig, name="post_config"),
@@ -77,7 +72,6 @@ urlpatterns = [
     path('channels/<uuid:channel_id>/io', ChannelViewSet.listIO),
     path('accessories/<uuid:accessory_id>/data_transformer', AccessoryViewSet.postDataTransformer),
 
-    # path('<str:room_name>/', views.room, name='room'),
     path('post/ajax/hub', HubViewSet.postHub, name="post_hub"),
     path('hub/', csrf_exempt(HubViewSet.postHub)),
     path('pipico/', csrf_exempt(HardwareViewSet.postHardware)),
@@ -87,7 +81,7 @@ urlpatterns = [
     path('hubs/<uuid:hub_id>/accessories', view=listHubAccessories),
     path('openhubapi/about', HubViewSet.about),
     path('streams/', video_streams, name="video_streams"),
-    # url('createuser', createUser, name='create_user'),
     path('createuser/', createUser, name="create_user"),
+    url(r'^$',LoginView.as_view(template_name="registration/login.html"),name='index'),
 
 ]

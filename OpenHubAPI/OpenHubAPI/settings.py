@@ -153,3 +153,5 @@ LOGGING = {
 }
 
 LOGIN_REDIRECT_URL='/hubs'
+LOGOUT_REDIRECT_URL = '/login'
+

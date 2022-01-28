@@ -437,47 +437,6 @@ class DataTransformerConstants(models.Model):
         ]
 
 
-class Calibration(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    type = models.CharField(max_length=255, null=True)
-    accessory = models.ForeignKey(Accessory, on_delete=models.CASCADE, blank=True, null=True, default=None)
-
-    updated_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.created_at:
-            self.created_at = timezone.now()
-        self.updated_at = timezone.now()
-
-        return super().save(*args, **kwargs)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['id'])
-        ]
-
-
-class CalibrationConstants(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    type = models.CharField(max_length=255, null=True)
-    value = models.CharField(max_length=255, null=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    calibration = models.ForeignKey(Calibration, on_delete=models.CASCADE, blank=True, null=False)
-
-    def save(self, *args, **kwargs):
-        if not self.created_at:
-            self.created_at = timezone.now()
-        self.updated_at = timezone.now()
-
-        return super().save(*args, **kwargs)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['id']),
-        ]
-
 
 class Category(models.Model):
     name = models.CharField(max_length=255, null=True)
