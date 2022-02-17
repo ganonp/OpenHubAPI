@@ -335,6 +335,22 @@ class HardwareConfig(models.Model):
             models.Index(fields=['id', 'hardware']),
         ]
 
+class ChannelStatDataPoint(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
+    channel = models.ForeignKey(Channel,on_delete=models.CASCADE,blank=True, null=True, default=None)
+    value = models.IntegerField(null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.created_at:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+
+        return super().save(*args, **kwargs)
+
 
 class ChannelStats(models.Model):
     def get_name_display(self):

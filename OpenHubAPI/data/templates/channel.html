@@ -78,6 +78,9 @@
     <hr/>
     <div class="basic">
 {% include "channel_stats.html" %}
+          {% autoescape off %}
+  {{ stats_graph }}
+  {% endautoescape %}
 </div>
 
         <hr/>

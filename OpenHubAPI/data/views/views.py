@@ -19,9 +19,9 @@ from data.forms.forms import HardwareForm, HardwareDHT22Form, HardwareMCP3008For
     I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoACAnalogIoForm, PiPicoAnalogIoForm, PiGpioForm, HardwareIoForm, \
     HardwarePMSA0031Form,ChannelStatsForm,HardwarePiForm,HardwareAM2315Form
 from data.models.models import Hardware, DHT22, MCP3008, ModProbe, PiPico, VEML7700, Accessory,  \
-     Channel, Hub, HardwareIO, ChannelStats, PMSA0031, AM2315
+     Channel, Hub, HardwareIO, ChannelStats, PMSA0031, AM2315, ChannelStatDataPoint
 from data.serializers.serializers import HardwareSerializer, ChannelSerializer, AccessorySerializer, \
-     HubSerializer, HardwareIOSerializer, ChannelStatsSerializer
+     HubSerializer, HardwareIOSerializer, ChannelStatsSerializer, ChannelStatDataPointSerializer
 
 SPI = 'SPI'
 Serial = 'Serial'
@@ -598,16 +598,31 @@ class ChannelViewSet(viewsets.ModelViewSet):
         hardware_ios = Channel.objects.get(**kwargs).hardwareio_set.all()
         channel_stats = Channel.objects.get(**kwargs).channelstats_set.all()
 
-        channel = Channel.objects.get(**kwargs)
 
+        channel = Channel.objects.get(**kwargs)
+        stats_graph = self.getStatsGraph(channel)
         channel_form = ChannelForm(Channel.objects.get(**kwargs).hardware.type, instance=channel)
         if request.accepted_renderer.format == 'html':
             return Response(
                 {"channel_form": channel_form, "channel": channel, 'hardware_io_type_form': hardware_io_type_form,
-                 'hardware_ios': hardware_ios, 'channel_stats': channel_stats},
+                 'hardware_ios': hardware_ios, 'channel_stats': channel_stats, 'stats_graph': stats_graph},
                 template_name='channel.html')
         else:
             return super(ChannelViewSet, self).retrieve()
+
+    def getStatsGraph(self,channel):
+        from plotly.offline import plot
+        # import plotly.graph_objs as go
+        import plotly.express as px
+
+        data_points = channel.channelstatdatapoint_set.all()
+        points = []
+        for data_point in data_points:
+            points.append(data_point.value)
+
+        hist = px.histogram(points)
+        plt_div = plot(hist, output_type='div')
+        return plt_div
 
     def listIO(self, channel_id):
         print('list io')
@@ -1017,3 +1032,28 @@ class ChannelStatsViewSet(viewsets.ModelViewSet):
 
             stats_data = ChannelStatsSerializer(instance=stats).to_representation(stats)
             return JsonResponse(stats_data, status=200)
+
+class ChannelStatDataPointViewSet(viewsets.ModelViewSet):
+    """
+    A simple ViewSet for viewing and editing the accounts
+    associated with the user.
+    """
+    serializer_class = ChannelStatDataPointSerializer
+
+    # permission_classes = [IsAccountAdminOrReadOnly]
+
+    def get_queryset(self):
+        return self.request.channel.channelstatdatapoint_set.all()
+
+    def create(self, request, *args, **kwargs):
+            print(str(request.POST))
+            stats = ChannelStatDataPoint()
+            stats.value = request.data['value']
+            stats.channel = Channel.objects.get(pk=request.data['channel'])
+            stats.user = stats.channel.user
+            stats.save()
+
+            stats_data = ChannelStatDataPointSerializer(instance=stats).to_representation(stats)
+            return JsonResponse(stats_data, status=200)
+
+

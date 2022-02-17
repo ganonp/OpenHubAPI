@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from data.models.models import  Channel, Accessory, HardwareConfig, PiPico, \
     DHT22, MCP3008, ModProbe, VEML7700, Hardware, Hub, SPIIo, SerialIo, PwmIo, I2cIo, DeviceFileIo, MCPAnalogIo, \
-    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer,DataTransformerConstants,DataTransformerTypes,ChannelStats
+    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer,DataTransformerConstants,DataTransformerTypes,ChannelStats,ChannelStatDataPoint
 
 class RecursiveField(serializers.Serializer):
     def to_representation(self, value):
@@ -28,6 +28,13 @@ class ChannelStatsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChannelStats
         fields = ['id', 'channel', 'type', 'value','model']
+
+class ChannelStatDataPointSerializer(serializers.ModelSerializer):
+    channel = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = ChannelStatDataPoint
+        fields = ['channel','value']
 
 class ChannelSerializer(serializers.ModelSerializer):
     channelstats_set = ChannelStatsSerializer(read_only=True,many=True, required=False)
