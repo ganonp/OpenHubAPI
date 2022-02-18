@@ -1,17 +1,25 @@
 #!/bin/sh
 
-sudo adduser openhubdaemon
-sudo adduser openhubdaemon spi
-sudo adduser openhubdaemon gpio
+if id openhubapidaemon &>/dev/null; then
+    echo 'openhubapidaemon exists'
+else
+    sudo adduser --disabled-login --gecos "" openhubapidaemon
+fi
 
+cd /home/openhubapidaemon
 
-cd /home/openhubdaemon
-sudo mkdir OpenHubApi
-cd OpenHubApi
-sudo mkdir OpenHubApi
+if [ -d "/home/openhubapidaemon/OpenHubAPI" ]; then
+    echo "Directory /home/openhubapidaemon/OpenHubAPI exists."
+else
+    sudo mkdir OpenHubAPI
+    cd OpenHubAPI
+    sudo mkdir OpenHubAPI
+fi
 
-
-sudo echo "[Unit]
+if id openhubdaemon &>/dev/null; then
+    echo 'OpenHub is not installed on this device.'
+else
+  sudo echo "[Unit]
 Description = OpenHub daemon
 Wants = network-online.target systemd-networkd-wait-online.service OpenHubAPI.service
 After = network-online.target systemd-networkd-wait-online.service local-fs.target OpenHubAPI.service
@@ -25,6 +33,9 @@ ExecStart = /usr/bin/python3 -m OpenHub
 
 [Install]
 WantedBy = multi-user.target" > /etc/systemd/system/OpenHub.service
+fi
+
+
 
 echo "[Unit]
 Description = OpenHubAPI daemon
@@ -32,7 +43,7 @@ Wants = network-online.target systemd-networkd-wait-online.service
 After = network-online.target systemd-networkd-wait-online.service local-fs.target
 
 [Service]
-User = openhubdaemon
+User = openhubapidaemon
 Environment=\"PATH=/usr/local/lib/python3.7/dist-packages\"
 # Script starting HAP-python, e.g. main.py
 # Be careful to set any paths you use, e.g. for persisting the state.

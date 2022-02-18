@@ -18,8 +18,12 @@ BASE_DIR = Path(__file__).resolve().parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
+
+
+from django.core.management.utils import get_random_secret_key
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9o#jxp0=)b%9*3l2s=eslnjhau-+-!e&%-cwc&5s1-rjd2eehb'
+SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -85,7 +89,7 @@ WSGI_APPLICATION = 'OpenHubAPI.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/home/openhubdaemon/db.sqlite3',
+        'NAME': '/home/openhubapidaemon/db.sqlite3',
     }
 }
 
