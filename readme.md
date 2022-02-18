@@ -15,9 +15,10 @@ Main features:
 
 
 ```
-$ sudo apt-get install python3-pip
-$ sudo python3 pip -m install openhub-api
-$ sudo python3 pip -m OpenHubAPI.install
+$ sudo apt-get update
+$ sudo apt-get install python3-pip --fix-missing -y
+$ sudo python3 -m pip install openhub-api
+$ sudo python3 -m OpenHubAPI.install
 ```
 
 ## UI 
