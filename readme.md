@@ -21,6 +21,20 @@ $ sudo python3 -m pip install openhub-api
 $ sudo python3 -m OpenHubAPI.install
 ```
 
+## Configuration / Setup
+
+1. Install OpenHubAPI on a Raspberry Pi.
+2. Install [OpenHub](https://github.com/ganonp/OpenHub) on the same or a different device.
+3. (Optional) Install  [OpenController](https://github.com/ganonp/OpenController) on a Raspberry Pi Pico and connect to to the OpenHub device.
+4. Hub will automatically find and add itself to OpenHubAPI on the same network.
+5. Create user on OpenHubAPI
+6. Add user to newly added hub.
+7. Create and configure hardware.
+8. Create and configure channels on hardware.
+9. Create and configure accessories with channels.
+10. Reboot device running [OpenHub](https://github.com/ganonp/OpenHub).
+11. Add accessories to HomeKit.
+
 ## UI 
 
 
