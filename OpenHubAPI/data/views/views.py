@@ -611,6 +611,7 @@ class ChannelViewSet(viewsets.ModelViewSet):
             return super(ChannelViewSet, self).retrieve()
 
     def getStatsGraph(self,channel):
+        import pandas
         from plotly.offline import plot
         # import plotly.graph_objs as go
         import plotly.express as px
