@@ -7,7 +7,7 @@ from django.forms import ChoiceField
 from data.models.models import Hardware, Accessory, Channel, HardwareConfig, \
      DHT22, MCP3008, \
     ModProbe, PiPico, VEML7700, HardwareChannelTypes, Hub, Category, AccessoryType, SPIIo, SerialIo, PwmIo, I2cIo, \
-    DeviceFileIo, MCPAnalogIo, PiGpio, PiPicoAnalogIo, PiPicoACAnalogIo, HardwareIO, PMSA0031, AM2315, ChannelStats, Pi
+    DeviceFileIo, MCPAnalogIo, PiGpio, AdafruitStepperMotorHAT, StepperMotor, PiPicoAnalogIo, PiPicoACAnalogIo, HardwareIO, PMSA0031, AM2315, ChannelStats, Pi
 
 
 class HubForm(forms.ModelForm):
@@ -117,6 +117,14 @@ class HardwareVEML7700Form(HardwareForm):
 
     class Meta:
         model = VEML7700
+        fields = ("__all__")
+
+class HardwareAdafruitStepperMotorHATForm(HardwareForm):
+    def __init__(self, *args, **kwargs):
+        super(HardwareAdafruitStepperMotorHATForm, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = AdafruitStepperMotorHAT
         fields = ("__all__")
 
 
@@ -417,6 +425,26 @@ class PiGpioForm(HardwareIoForm):
         model = PiGpio
         fields = ("__all__")
 
+class StepperMotorForm(HardwareIoForm):
+
+    def __init__(self, *args, **kwargs):
+        super(StepperMotorForm, self).__init__(*args, **kwargs)
+        ## add a "form-control" class to each form input
+        ## for enabling bootstrap
+        print('asdf')
+        for name in self.fields.keys():
+            if name in ('parent_hardware', 'child_hardware', 'id', 'child_channel', 'hub'):
+                self.fields[name].widget = forms.HiddenInput()
+            print(name)
+            self.fields[name].widget.attrs.update({
+                'class': 'form-control',
+            })
+
+    class Meta:
+        model = StepperMotor
+        fields = ("__all__")
+
+
 
 DHT22 = 'DHT22'
 MCP3008 = 'MCP3008'
@@ -424,10 +452,11 @@ ModProbe = 'ModProbe'
 PiPico = 'PiPico'
 Pi = 'Pi'
 VEML7700 = 'VEML7700'
+AdafruitStepperMotorHAT = 'AdafruitStepperMotorHAT'
 PMSA0031 = 'PMSA0031'
 AM2315 = 'AM2315'
 CHOICES = (('DHT22', 'DHT22'), ('MCP3008', 'MCP3008'), ('ModProbe', 'ModProbe'), ('Pi', 'Pi'),('PiPico', 'PiPico'),
-           ('VEML7700', 'VEML7700'), ('PMSA0031', 'PMSA0031'),('AM2315','AM2315'))
+           ('VEML7700', 'VEML7700'), ('PMSA0031', 'PMSA0031'),('AM2315','AM2315'),('AdafruitStepperMotorHAT','AdafruitStepperMotorHAT'))
 
 
 class HardwareTypeForm(forms.Form):
@@ -446,10 +475,11 @@ MCPChannel = 'MCP Channel'
 PiPicoAnalog = 'Pi Pico Analog'
 PiPicoACAnalog = 'Pi Pico AC Analog'
 PiGPIO = 'Pi GPIO'
+StepperMotor = 'StepperMotor'
 
 hardware_io_choices = (
     (SPI, SPI), (Serial, Serial), (PWM, PWM), (I2C, I2C), (DeviceFile, DeviceFile), (MCPChannel, MCPChannel),
-    (PiPicoAnalog, PiPicoAnalog), (PiPicoACAnalog, PiPicoACAnalog), (PiGPIO, PiGPIO))
+    (PiPicoAnalog, PiPicoAnalog), (PiPicoACAnalog, PiPicoACAnalog), (PiGPIO, PiGPIO), (StepperMotor, StepperMotor))
 
 
 class HardwareIOTypeForm(forms.Form):

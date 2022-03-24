@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from data.models.models import  Channel, Accessory, HardwareConfig, PiPico, \
     DHT22, MCP3008, ModProbe, VEML7700, Hardware, Hub, SPIIo, SerialIo, PwmIo, I2cIo, DeviceFileIo, MCPAnalogIo, \
-    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, DataTransformer,DataTransformerConstants,DataTransformerTypes,ChannelStats,ChannelStatDataPoint
+    PiPicoAnalogIo, PiPicoACAnalogIo, PiGpio, StepperMotor, DataTransformer,DataTransformerConstants,DataTransformerTypes,ChannelStats,ChannelStatDataPoint
 
 class RecursiveField(serializers.Serializer):
     def to_representation(self, value):
@@ -195,6 +195,10 @@ class PiGpioSerializer(serializers.ModelSerializer):
         model = PiGpio
         fields = '__all__'
 
+class StepperMotorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StepperMotor
+        fields = '__all__'
 
 class HardwareIOSerializer(serializers.ModelSerializer):
 
@@ -227,7 +231,8 @@ class HardwareIOSerializer(serializers.ModelSerializer):
             return PiPicoACAnalogIoSerializer(obj, context=self.context).to_representation(obj)
         elif isinstance(obj, PiGpio):
             return PiGpioSerializer(obj, context=self.context).to_representation(obj)
-
+        elif isinstance(obj, StepperMotor):
+            return StepperMotorSerializer(obj, context=self.context).to_representation(obj)
         return super(HardwareIOSerializer, self).to_representation(obj)
 
     class Meta:

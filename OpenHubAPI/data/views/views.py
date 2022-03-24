@@ -14,12 +14,12 @@ from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.response import Response
 
 from data.forms.forms import HardwareForm, HardwareDHT22Form, HardwareMCP3008Form, HardwareModProbeForm, \
-    HardwarePiPicoForm, HardwareVEML7700Form, HardwareTypeForm, ChannelForm, HardwareConfigForm, AccessoryForm, \
+    HardwarePiPicoForm, HardwareVEML7700Form, HardwareAdafruitStepperMotorHATForm, HardwareTypeForm, ChannelForm, HardwareConfigForm, AccessoryForm, \
      HubForm, HardwareIOTypeForm, SPIIoForm, PwmIoForm, SerialIoForm, \
-    I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoACAnalogIoForm, PiPicoAnalogIoForm, PiGpioForm, HardwareIoForm, \
+    I2cIoForm, DeviceFileIoForm, MCPAnalogIoForm, PiPicoACAnalogIoForm, PiPicoAnalogIoForm, PiGpioForm, StepperMotorForm, HardwareIoForm, \
     HardwarePMSA0031Form,ChannelStatsForm,HardwarePiForm,HardwareAM2315Form
 from data.models.models import Hardware, DHT22, MCP3008, ModProbe, PiPico, VEML7700, Accessory,  \
-     Channel, Hub, HardwareIO, ChannelStats, PMSA0031, AM2315, ChannelStatDataPoint
+     Channel, Hub, HardwareIO, ChannelStats, PMSA0031, AM2315, ChannelStatDataPoint, AdafruitStepperMotorHAT
 from data.serializers.serializers import HardwareSerializer, ChannelSerializer, AccessorySerializer, \
      HubSerializer, HardwareIOSerializer, ChannelStatsSerializer, ChannelStatDataPointSerializer
 
@@ -32,6 +32,7 @@ MCPChannel = 'MCP Channel'
 PiPicoAnalog = 'Pi Pico Analog'
 PiPicoACAnalog = 'Pi Pico AC Analog'
 PiGPIO = 'Pi GPIO'
+StepperMotor = 'StepperMotor'
 
 
 class HardwareViewSet(viewsets.ModelViewSet):
@@ -60,6 +61,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 form = HardwarePiForm(data=request.POST, instance=hardware)
             if hardware_type == 'VEML7700':
                 form = HardwareVEML7700Form(data=request.POST, instance=hardware)
+            if hardware_type == 'AdafruitStepperMotorHAT':
+                form = HardwareAdafruitStepperMotorHATForm(data=request.POST, instance=hardware)
             if hardware_type == 'PMSA0031':
                 form = HardwarePMSA0031Form(data=request.POST, instance=hardware)
             if hardware_type == 'AM2315':
@@ -91,6 +94,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
             form = HardwarePiForm(initial={'type': 'Pi', "user":request.user})
         if hardware_type == 'VEML7700':
             form = HardwareVEML7700Form(initial={'type': 'VEML7700', "user":request.user})
+        if hardware_type == 'AdafruitStepperMotorHAT':
+            form = HardwareAdafruitStepperMotorHATForm(initial={'type': 'AdafruitStepperMotorHAT', "user":request.user})
         if hardware_type == 'PMSA0031':
             form = HardwarePMSA0031Form(initial={'type': 'PMSA0031', "user":request.user})
         if hardware_type == 'AM2315':
@@ -147,6 +152,10 @@ class HardwareViewSet(viewsets.ModelViewSet):
         if hardware_io_type == PiGPIO:
             form = PiGpioForm(initial=initial)
             form.type = PiGPIO
+
+        if hardware_io_type == StepperMotor:
+            form = StepperMotorForm(initial=initial)
+            form.type = StepperMotor
 
         return HttpResponse(form.as_p())
 
@@ -211,10 +220,11 @@ class HardwareViewSet(viewsets.ModelViewSet):
     PiPicoAnalog = 'Pi Pico Analog'
     PiPicoACAnalog = 'Pi Pico AC Analog'
     PiGPIO = 'Pi GPIO'
+    StepperMotor = 'StepperMotor'
 
     def postHardwareIO(request):
-        if not request.user.is_authenticated:
-            return JsonResponse({"error": "user not authenticated"}, status=400)
+        # if not request.user.is_authenticated:
+        #     return JsonResponse({"error": "user not authenticated"}, status=400)
         # request should be ajax and method should be POST.
         if request.is_ajax and request.method == "POST":
             # get the form data
@@ -239,11 +249,14 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 hardware_form = PiPicoACAnalogIoForm(request.POST)
             if hardware_io_type == PiGPIO:
                 hardware_form = PiGpioForm(request.POST)
+            if hardware_io_type == 'Stepper Motor':
+                hardware_form = StepperMotorForm(request.POST)
+
             # save the data and after fetch the object in instance
             if hardware_form.is_valid():
                 instance = hardware_form.save()
-                instance.user = request.user;
-                instance.save()
+                # instance.user = request.POST['user']
+                # instance.save()
                 # serialize in new friend object in json
                 ser_instance = django_serializers.serialize('json', [instance, ])
                 # send to client side.
@@ -276,6 +289,8 @@ class HardwareViewSet(viewsets.ModelViewSet):
                 hardware_form = HardwarePiForm(request.POST)
             if hardware_type == 'VEML7700':
                 hardware_form = HardwareVEML7700Form(request.POST)
+            if hardware_type == 'AdafruitStepperMotorHAT':
+                hardware_form = HardwareAdafruitStepperMotorHATForm(request.POST)
             if hardware_type == 'PMSA0031':
                 hardware_form = HardwarePMSA0031Form(request.POST)
             if hardware_type == 'AM2315':
@@ -334,6 +349,9 @@ class HardwareViewSet(viewsets.ModelViewSet):
             if hardware_type == 'VEML7700':
                 hardware_form = HardwareVEML7700Form(instance=VEML7700.objects.get(**kwargs),
                                                      initial={'type': 'VEML7700'})
+            if hardware_type == 'AdafruitStepperMotorHAT':
+                hardware_form = HardwareAdafruitStepperMotorHATForm(instance=AdafruitStepperMotorHAT.objects.get(**kwargs),
+                                                     initial={'type': 'AdafruitStepperMotorHAT'})
             if hardware_type == 'PMSA0031':
                 hardware_form = HardwarePMSA0031Form(instance=PMSA0031.objects.get(**kwargs),
                                                      initial={'type': 'PMSA0031'})
@@ -484,8 +502,8 @@ class AccessoryViewSet(viewsets.ModelViewSet):
             return super(AccessoryViewSet, self).retrieve(request, *args, **kwargs)
 
     def postAccessory(request):
-        if not request.user.is_authenticated:
-            return JsonResponse({"error":"user not authenticated"}, status=400)
+        # if not request.user.is_authenticated:
+        #     return JsonResponse({"error":"user not authenticated"}, status=400)
         # request should be ajax and method should be POST.
         if request.is_ajax and request.method == "POST":
             # get the form data
@@ -835,6 +853,8 @@ class IOViewSet(viewsets.ModelViewSet):
             hardware_form = PiPicoACAnalogIoForm(instance=instance)
         if hardware_io_type == PiGPIO:
             hardware_form = PiGpioForm(instance=instance)
+        if hardware_io_type == StepperMotor:
+            hardware_form = StepperMotorForm(instance=instance)
 
         if request.accepted_renderer.format == 'html':
             return Response(

@@ -39,6 +39,7 @@ class Hardware(PolymorphicModel):
         PiPico = 'PiPico'
         Pi = 'Pi'
         VEML7700 = 'VEML7700'
+        AdafruitStepperMotorHAT = 'AdafruitStepperMotorHAT'
         PMSA0031 = 'PMSA0031'
         AM2315 = 'AM2315'
 
@@ -46,7 +47,7 @@ class Hardware(PolymorphicModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, null=True, blank=True)
 
     type = models.CharField(
-        max_length=10,
+        max_length=30,
         choices=Type.choices,
         default=Type.PiPico,
     )
@@ -96,6 +97,9 @@ class VEML7700(Hardware):
     scl = models.IntegerField()
     sda = models.IntegerField()
 
+class AdafruitStepperMotorHAT(Hardware):
+    scl = models.IntegerField()
+    sda = models.IntegerField()
 
 class PMSA0031(Hardware):
     scl = models.IntegerField()
@@ -138,6 +142,7 @@ class Channel(models.Model):
         PiPicoAnalog = 'PiPicoAnalog'
         PiPicoPump = 'PiPicoPump'
         PiPicoRelay = 'PiPicoRelay'
+        AdafruitStepperMotor = 'AdafruitStepperMotor'
         VEML7700Light = 'VEML7700Light'
         VEML7700Lux = 'VEML7700Lux'
         PiRelay = 'PiRelay'
@@ -187,9 +192,10 @@ class HardwareIO(PolymorphicModel):
     PiPicoACAnalog = 'Pi Pico AC Analog'
     PiPicoAnalog = 'Pi Pico Analog'
     PiGPIO = 'Pi GPIO'
+    StepperMotor = 'Stepper Motor'
     hardware_io_types_choices = [(SPI, SPI), (Serial, Serial), (PWM, PWM), (I2C, I2C), (DeviceFile, DeviceFile),
                                  (MCPChannel, MCPChannel), (PiPicoAnalog, PiPicoAnalog),
-                                 (PiPicoACAnalog, PiPicoACAnalog), (PiGPIO, PiGPIO)]
+                                 (PiPicoACAnalog, PiPicoACAnalog), (PiGPIO, PiGPIO),(StepperMotor,StepperMotor)]
 
     label = models.CharField(max_length=255, null=True)
 
@@ -272,6 +278,11 @@ class PiPicoACAnalogIo(HardwareIO):
 
 class PiGpio(HardwareIO):
     pin = models.IntegerField()
+
+class StepperMotor(HardwareIO):
+    full_rotation_steps = models.IntegerField()
+    number_of_rotations = models.FloatField()
+    step_pause_time = models.FloatField()
 
 
 class Accessory(models.Model):
